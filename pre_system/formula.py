@@ -369,9 +369,7 @@ class FDeflate(Formula):
                                                    weight_df,
                                                    correction_df)
 
-        evaluated_formula_divided = evaluated_formula.div(
-            aggregatet_indicators[aggregatet_indicators.index.year == self.baseyear].sum()
-        )
+        evaluated_formula_divided = evaluated_formula.div(aggregatet_indicators)
 
         if self._correction_name:
             if correction_df is None:
