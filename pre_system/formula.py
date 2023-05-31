@@ -303,6 +303,8 @@ class FDeflate(Formula):
                  weight_names: list[str] = None,
                  correction_name: str = None):
         super().__init__(name)
+        if isinstance(formula, Formula) is False:
+            raise TypeError('formula must be of type Formula')
         if weight_names and len(weight_names) != len(indicator_names):
             raise IndexError('weight_names must have same length as indicator_names')
         self._formula = formula
@@ -370,6 +372,105 @@ class FDeflate(Formula):
                                                    correction_df)
 
         evaluated_formula_divided = evaluated_formula.div(aggregatet_indicators)
+
+        if self._correction_name:
+            if correction_df is None:
+                raise NameError(f'{self.name} expects correction_df')
+            if (self._correction_name in correction_df.columns) is False:
+                raise NameError(f'{self._correction_name} is not in correction_df')
+            evaluated_corrected = evaluated_formula_divided*correction_df[self._correction_name]
+        else:
+            evaluated_corrected = evaluated_formula_divided
+
+        evaluated_series = (
+            evaluated_formula[evaluated_formula.index.year == self.baseyear].sum()
+            * evaluated_corrected.div(
+                evaluated_corrected[
+                    evaluated_corrected.index.year == self.baseyear
+                ].sum()
+            )
+        )
+
+        return evaluated_series
+
+    
+class FInflate(Formula):
+    def __init__(self,
+                 name: str,
+                 formula: Formula,
+                 indicator_names: list[str],
+                 weight_names: list[str] = None,
+                 correction_name: str = None):
+        super().__init__(name)
+        if isinstance(formula, Formula) is False:
+            raise TypeError('formula must be of type Formula')
+        if weight_names and len(weight_names) != len(indicator_names):
+            raise IndexError('weight_names must have same length as indicator_names')
+        self._formula = formula
+        self._indicator_names = indicator_names
+        self._weight_names = weight_names
+        self._correction_name = correction_name
+        self._calls_on = {formula.name: formula}
+
+    @property
+    def what(self):
+        correction = f'{self._correction_name}*' if self._correction_name else ''
+        if self._weight_names:
+            weighted_indicators = (
+                '+'.join(['*'.join([x.lower(), y.lower()]) for x, y in
+                          zip(self._weight_names, self._indicator_names)])
+            )
+        else:
+            weighted_indicators = (
+                '+'.join([x.lower() for x in self._indicator_names])
+            )
+
+        numerator = f'{correction}{self._formula.name}*({weighted_indicators})'
+        denominator = f'sum({numerator}<date {self.baseyear}>)'
+        fraction = f'({numerator})/{denominator}'
+
+        return (
+            f'sum({self._formula.name}<date {self.baseyear}>)*{fraction}'
+        )
+
+    def evaluate(self,
+                 annual_df: pd.DataFrame,
+                 indicator_df: pd.DataFrame,
+                 weight_df: pd.DataFrame = None,
+                 correction_df: pd.DataFrame = None) -> pd.Series:
+        super().evaluate(annual_df,
+                         indicator_df,
+                         weight_df,
+                         correction_df)
+
+        if all(x in indicator_df.columns for x in self._indicator_names) is False:
+            raise NameError(f'All of {",".join(self._indicator_names)} is not in indicator_df')
+
+        if self._weight_names:
+            if weight_df is None:
+                raise NameError(f'{self.name} expects weight_df')
+            if all(x in weight_df.columns for x in self._weight_names) is False:
+                raise NameError(f'All of {",".join(self._weight_names)} is not in weight_df')
+
+            indicator_matrix = indicator_df[self._indicator_names].to_numpy()
+            weight_vector = (
+                weight_df[weight_df.index.year == self.baseyear][self._weight_names]
+                .to_numpy()
+            )
+
+            aggregatet_indicators = pd.Series(
+                indicator_matrix.dot(weight_vector.transpose())[:, 0],
+                index=indicator_df.index
+            )
+        else:
+            aggregatet_indicators = indicator_df[self._indicator_names].sum(axis=1)
+
+        evaluated_formula = self._formula.evaluate(annual_df,
+                                                   indicator_df,
+                                                   weight_df,
+                                                   correction_df)
+
+        evaluated_formula_divided = evaluated_formula*aggregatet_indicators
 
         if self._correction_name:
             if correction_df is None:
