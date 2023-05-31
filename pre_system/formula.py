@@ -28,6 +28,8 @@ class Formula:
             raise TypeError('name must be str')
         self._name = name.lower()
         self._calls_on = None
+        
+        print('test')
 
     @property
     def name(self):
@@ -341,8 +343,6 @@ class FDeflate(Formula):
                          indicator_df,
                          weight_df,
                          correction_df)
-
-        print('HELLO')
 
         if all(x in indicator_df.columns for x in self._indicator_names) is False:
             raise NameError(f'All of {",".join(self._indicator_names)} is not in indicator_df')
