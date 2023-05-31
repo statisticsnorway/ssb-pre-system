@@ -302,6 +302,29 @@ class FDeflate(Formula):
                  indicator_names: list[str],
                  weight_names: list[str] = None,
                  correction_name: str = None):
+        """
+        Initialize an FDeflate object.
+
+        Parameters
+        ----------
+        name : str
+            The name of the FDeflate formula.
+        formula : Formula
+            The base formula to be used.
+        indicator_names : list[str]
+            List of indicator names used in the formula.
+        weight_names : list[str], optional
+            List of weight names corresponding to the indicator names. Defaults to None.
+        correction_name : str, optional
+            The name of the correction factor. Defaults to None.
+
+        Raises
+        ------
+        TypeError
+            If `formula` is not of type Formula.
+        IndexError
+            If `weight_names` is provided and has a different length than `indicator_names`.
+        """
         super().__init__(name)
         if isinstance(formula, Formula) is False:
             raise TypeError('formula must be of type Formula')
@@ -401,6 +424,29 @@ class FInflate(Formula):
                  indicator_names: list[str],
                  weight_names: list[str] = None,
                  correction_name: str = None):
+        """
+        Initialize an FInflate object.
+
+        Parameters
+        ----------
+        name : str
+            The name of the FDeflate formula.
+        formula : Formula
+            The base formula to be used.
+        indicator_names : list[str]
+            List of indicator names used in the formula.
+        weight_names : list[str], optional
+            List of weight names corresponding to the indicator names. Defaults to None.
+        correction_name : str, optional
+            The name of the correction factor. Defaults to None.
+
+        Raises
+        ------
+        TypeError
+            If `formula` is not of type Formula.
+        IndexError
+            If `weight_names` is provided and has a different length than `indicator_names`.
+        """
         super().__init__(name)
         if isinstance(formula, Formula) is False:
             raise TypeError('formula must be of type Formula')
