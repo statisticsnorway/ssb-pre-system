@@ -268,7 +268,7 @@ class Indicator(Formula):
                 index=indicator_df.index
             )
         else:
-            weighted_indicators = indicator_df.sum(axis=1)
+            weighted_indicators = indicator_df[self._indicator_names].sum(axis=1)
 
         if self._correction_name:
             if correction_df is None:
@@ -362,7 +362,7 @@ class FDeflate(Formula):
                 index=indicator_df.index
             )
         else:
-            aggregatet_indicators = indicator_df.sum(axis=1)
+            aggregatet_indicators = indicator_df[self._indicator_names].sum(axis=1)
 
         evaluated_formula = self._formula.evaluate(annual_df,
                                                    indicator_df,
