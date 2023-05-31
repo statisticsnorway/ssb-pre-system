@@ -28,8 +28,6 @@ class Formula:
             raise TypeError('name must be str')
         self._name = name.lower()
         self._calls_on = None
-        
-        print('test')
 
     @property
     def name(self):
