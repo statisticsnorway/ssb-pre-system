@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Forsystem for månedlige og kvartalsevise NR-statistikker"
 authors = ["Magnus Kvåle Helliesen <magnus.helliesen@gmail.com>"]
 license = "MIT"
+packages = [{include = "pre_system"}]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.11"
