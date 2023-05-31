@@ -342,6 +342,8 @@ class FDeflate(Formula):
                          weight_df,
                          correction_df)
 
+        print('HELLO')
+
         if all(x in indicator_df.columns for x in self._indicator_names) is False:
             raise NameError(f'All of {",".join(self._indicator_names)} is not in indicator_df')
 
