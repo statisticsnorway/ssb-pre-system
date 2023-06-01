@@ -362,10 +362,8 @@ class FDeflate(Formula):
                  indicator_df: pd.DataFrame,
                  weight_df: pd.DataFrame = None,
                  correction_df: pd.DataFrame = None) -> pd.Series:
-        super().evaluate(annual_df,
-                         indicator_df,
-                         weight_df,
-                         correction_df)
+        all_dfs = (annual_df, indicator_df, weight_df, correction_df)
+        super().evaluate(*all_dfs)
 
         if all(x in indicator_df.columns for x in self._indicator_names) is False:
             raise NameError(f'All of {",".join(self._indicator_names)} is not in indicator_df')
@@ -389,10 +387,7 @@ class FDeflate(Formula):
         else:
             aggregatet_indicators = indicator_df[self._indicator_names].sum(axis=1)
 
-        evaluated_formula = self._formula.evaluate(annual_df,
-                                                   indicator_df,
-                                                   weight_df,
-                                                   correction_df)
+        evaluated_formula = self._formula.evaluate(*all_dfs)
 
         evaluated_formula_divided = evaluated_formula.div(aggregatet_indicators)
 
@@ -484,10 +479,8 @@ class FInflate(Formula):
                  indicator_df: pd.DataFrame,
                  weight_df: pd.DataFrame = None,
                  correction_df: pd.DataFrame = None) -> pd.Series:
-        super().evaluate(annual_df,
-                         indicator_df,
-                         weight_df,
-                         correction_df)
+        all_dfs = (annual_df, indicator_df, weight_df, correction_df)
+        super().evaluate(*all_dfs)
 
         if all(x in indicator_df.columns for x in self._indicator_names) is False:
             raise NameError(f'All of {",".join(self._indicator_names)} is not in indicator_df')
@@ -511,10 +504,7 @@ class FInflate(Formula):
         else:
             aggregatet_indicators = indicator_df[self._indicator_names].sum(axis=1)
 
-        evaluated_formula = self._formula.evaluate(annual_df,
-                                                   indicator_df,
-                                                   weight_df,
-                                                   correction_df)
+        evaluated_formula = self._formula.evaluate(*all_dfs)
 
         evaluated_formula_divided = evaluated_formula*aggregatet_indicators
 
@@ -859,12 +849,11 @@ class MultCorr(Formula):
 
     @property
     def what(self):
-        if isinstance(self._formula, Indicator):
-            formula = f'{self._correction_name}*{self._formula.what}'
-        else:
-            formula = f'{self._correction_name}*({self._formula.what})'
-
-        return formula
+        return (
+            f'sum(({self._formula.what})<date {self.baseyear}>)*'
+            f'{self._correction_name}*({self._formula.what})/'
+            f'sum({self._correction_name}*({self._formula.what})<date {self.baseyear}>)'
+        )
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
@@ -905,10 +894,16 @@ class MultCorr(Formula):
         """
         all_dfs = (annual_df, indicator_df, weight_df, correction_df)
         super().evaluate(*all_dfs)
+        
+        evaluated_formula = self._formula.evaluate(*all_dfs)
+
+        evaluated_corrected = evaluated_formula*correction_df[self._correction_name]
 
         return (
-            correction_df[self._correction_name]
-            * self._formula.evaluate(*all_dfs)
+            evaluated_formula[evaluated_formula.index.year == self.baseyear].sum()*
+            evaluated_corrected.div(
+                evaluated_corrected[evaluated_corrected.index.year == self.baseyear].sum()
+            )
         )
 
 
@@ -938,12 +933,7 @@ class AddCorr(Formula):
 
     @property
     def what(self):
-        if isinstance(self._formula, Indicator):
-            formula = f'{self._correction_name}+{self._formula.what}'
-        else:
-            formula = f'{self._correction_name}+({self._formula.what})'
-
-        return formula
+        return f'{self._correction_name}+({self._formula.what})'
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
