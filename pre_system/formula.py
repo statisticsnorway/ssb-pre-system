@@ -933,7 +933,7 @@ class AddCorr(Formula):
 
     @property
     def what(self):
-        return f'{self._correction_name}+({self._formula.what})'
+        return f'{self._correction_name}+({self._formula.what})-avg({self._correction_name}<date {self.baseyear})'
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
@@ -974,8 +974,9 @@ class AddCorr(Formula):
         """
         all_dfs = (annual_df, indicator_df, weight_df, correction_df)
         super().evaluate(*all_dfs)
-
+        print(correction_df[self._correction_name] - correction_df[correction_df.index.year == self.baseyear][self._correction_name].mean())
         return (
             correction_df[self._correction_name]
             + self._formula.evaluate(*all_dfs)
+            - correction_df[correction_df.index.year == self.baseyear][self._correction_name].mean()
         )
