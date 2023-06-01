@@ -129,7 +129,7 @@ class Formula:
         if df[df.index.year == baseyear].shape[0] == 0:
             raise IndexError(f'baseyear {baseyear} is out of range for annual_df')
         if all(np.issubdtype(df[x].dtype, np.number) for x in df.columns) is False:
-            raise TypeError('All columns in annual_df must be numeric')
+            raise TypeError(f'All columns in {df_name} must be numeric')
 
 
 class Indicator(Formula):
