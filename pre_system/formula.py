@@ -389,22 +389,22 @@ class FDeflate(Formula):
 
         evaluated_formula = self._formula.evaluate(*all_dfs)
 
-        evaluated_formula_divided = evaluated_formula.div(aggregatet_indicators)
+        formula_divided = evaluated_formula.div(aggregatet_indicators)
 
         if self._correction_name:
             if correction_df is None:
                 raise NameError(f'{self.name} expects correction_df')
             if (self._correction_name in correction_df.columns) is False:
                 raise NameError(f'{self._correction_name} is not in correction_df')
-            evaluated_corrected = evaluated_formula_divided*correction_df[self._correction_name]
+            formula_corrected = formula_divided*correction_df[self._correction_name]
         else:
-            evaluated_corrected = evaluated_formula_divided
+            formula_corrected = formula_divided
 
         evaluated_series = (
             evaluated_formula[evaluated_formula.index.year == self.baseyear].sum()
-            * evaluated_corrected.div(
-                evaluated_corrected[
-                    evaluated_corrected.index.year == self.baseyear
+            * formula_corrected.div(
+                formula_corrected[
+                    formula_corrected.index.year == self.baseyear
                 ].sum()
             )
         )
@@ -506,22 +506,22 @@ class FInflate(Formula):
 
         evaluated_formula = self._formula.evaluate(*all_dfs)
 
-        evaluated_formula_divided = evaluated_formula*aggregatet_indicators
+        formula_divided = evaluated_formula*aggregatet_indicators
 
         if self._correction_name:
             if correction_df is None:
                 raise NameError(f'{self.name} expects correction_df')
             if (self._correction_name in correction_df.columns) is False:
                 raise NameError(f'{self._correction_name} is not in correction_df')
-            evaluated_corrected = evaluated_formula_divided*correction_df[self._correction_name]
+            formula_corrected = formula_divided*correction_df[self._correction_name]
         else:
-            evaluated_corrected = evaluated_formula_divided
+            formula_corrected = formula_divided
 
         evaluated_series = (
             evaluated_formula[evaluated_formula.index.year == self.baseyear].sum()
-            * evaluated_corrected.div(
-                evaluated_corrected[
-                    evaluated_corrected.index.year == self.baseyear
+            * formula_corrected.div(
+                formula_corrected[
+                    formula_corrected.index.year == self.baseyear
                 ].sum()
             )
         )
@@ -897,12 +897,12 @@ class MultCorr(Formula):
         
         evaluated_formula = self._formula.evaluate(*all_dfs)
 
-        evaluated_corrected = evaluated_formula*correction_df[self._correction_name]
+        formula_corrected = evaluated_formula*correction_df[self._correction_name]
 
         return (
             evaluated_formula[evaluated_formula.index.year == self.baseyear].sum()*
-            evaluated_corrected.div(
-                evaluated_corrected[evaluated_corrected.index.year == self.baseyear].sum()
+            formula_corrected.div(
+                formula_corrected[formula_corrected.index.year == self.baseyear].sum()
             )
         )
 
