@@ -24,13 +24,13 @@ $k$ er en korreksjon som er lik én med mindre brukeren ønsker å foreta en kor
 **FDeflate**-underklassen tar utgangspunkt i en eksisterende formel (for eksempel en **Indicator**-instans) og deflaterer denne,
 
 $$
-  \sum_{s\in T}x_t\cdot\frac{k_t x_t/\sum_i w_{i,T} I_{i,t}}{\sum_{s\in T}k_s x_s/\sum_i w_{i,T} I_{i,s}}.
+  \sum_{s\in T}x_s\cdot\frac{k_t x_t/\sum_i w_{i,T} I_{i,t}}{\sum_{s\in T}k_s x_s/\sum_i w_{i,T} I_{i,s}}.
 $$
 
 **FInflate**-underklassen tar utgangspunkt i en eksisterende formel (for eksempel en **Indicator**-instans) og inflaterer denne,
 
 $$
-  \sum_{s\in T}x_t\cdot\frac{k_t x_t\sum_i w_{i,T} I_{i,t}}{\sum_{s\in T}k_s x_s\sum_i w_{i,T} I_{i,s}}.
+  \sum_{s\in T}x_s\cdot\frac{k_t x_t\sum_i w_{i,T} I_{i,t}}{\sum_{s\in T}k_s x_s\sum_i w_{i,T} I_{i,s}}.
 $$
 
 **FSum** summerer andre **Formula**-insanser, **FSumProd** lager et summerprodukt, **FMutlt** multipliserer to instanser, og **FDiv** dividerer.
