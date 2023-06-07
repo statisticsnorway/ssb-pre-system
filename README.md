@@ -10,7 +10,7 @@ Magnus Kvåle Helliesen <magnus.helliesen@gmail.com>
 Prosjektet består av to klasser (**Formula** og **PreSystem**) og to funksjoner (**convert** og **convert_step**).
 
 ## Formula
-Klassen **Formula** består av en rekke underklasser: **Indicator**, **FDeflate**, **FInflate**, **FSum**, **FSumProd**, **FMutl** og **FDiv**.
+Klassen **Formula** består av en rekke underklasser: **Indicator**, **FDeflate**, **FInflate**, **FSum**, **FSumProd**, **FMult** og **FDiv**.
 
 **Indicator**-underklassen definerer et indikatorobjekt som favner om de fleste indikatorer i nasjonalregnskapet,
 
@@ -19,7 +19,7 @@ $$
 $$
 
 der $x$ er den aktuelle nasjonalregnskapsvariabelen, $w$ er vekter, $I$ er indikatorer. $T$ betegner basisåret.
-$k$ er en korreksjon som er lik én med mindre brukeren ønsker å foreta en korreksjon
+$k$ er en korreksjon som er lik én med mindre brukeren ønsker å foreta en korreksjon.
 
 **FDeflate**-underklassen tar utgangspunkt i en eksisterende formel (for eksempel en **Indicator**-instans) og deflaterer denne,
 
@@ -35,10 +35,10 @@ $$
 
 **FSum** summerer andre **Formula**-insanser, **FSumProd** lager et summerprodukt, **FMutlt** multipliserer to instanser, og **FDiv** dividerer.
 
-Alle undeklassene har metodene **what** og **evaluate**. `formel.what` vil returnere en tekstlig representasjon av definisjonen på formelen. Dette lar brukeren spore seg tilbake til én eller flere **Indicator**-instanser. `formel.evaluate(års_df, indikator_df, vekt_df, korreksjon_df)` returnerer en **Pandas**-serie som er den aktuelle formelen evaluert gjenstand for data.
+Alle undeklassene har metodene **what** og **evaluate**. `formel.what` vil returnere en tekstlig representasjon av definisjonen på formelen. Dette lar brukeren spore seg tilbake til én eller flere **Indicator**-instanser (alle formler må til slutt ende i **Indicator**-instanser). `formel.evaluate(års_df, indikator_df, vekt_df, korreksjon_df)` returnerer en **Pandas**-serie som er den aktuelle formelen evaluert gjenstand for data.
 
 ## PreSystem
-Klassen **PreSystem** lar brukeren initialisere et forsystem-objekt. Dette har som oppgave å holde instanser av **Formel**-objekter og la brukeren enkelt evaluere alle formler som er en del av forsystemet
+Klassen **PreSystem** lar brukeren initialisere et forsystem-objekt. Dette har som oppgave å holde instanser av **Formel**-objekter og la brukeren enkelt evaluere alle formler som er en del av forsystemet.
 
 ## Convert og convert_step
 Dette er funksjoner som lar brukeren konvertere en **Pandas** **DataFrame** fra én frekvens til en annen.
