@@ -243,8 +243,7 @@ class Indicator(Formula):
                          correction_df)
 
         if (self._annual_name in annual_df.columns) is False:
-            missing = [x for x in self._annual_name if x not in annual_df.columns]
-            raise NameError(f'Cannot find {",".join(missing)} in annual_df')
+            raise NameError(f'Cannot find {self._annual_name} in annual_df')
 
         if all(x in indicator_df.columns for x in self._indicator_names) is False:
             missing = [x for x in self._indicator_names if x not in indicator_df.columns]
@@ -411,7 +410,7 @@ class FDeflate(Formula):
 
         return evaluated_series
 
-    
+
 class FInflate(Formula):
     def __init__(self,
                  name: str,
@@ -894,7 +893,7 @@ class MultCorr(Formula):
         """
         all_dfs = (annual_df, indicator_df, weight_df, correction_df)
         super().evaluate(*all_dfs)
-        
+
         evaluated_formula = self._formula.evaluate(*all_dfs)
 
         formula_corrected = evaluated_formula*correction_df[self._correction_name]
