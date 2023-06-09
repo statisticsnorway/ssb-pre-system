@@ -138,7 +138,7 @@ def convert_step(input_df: pd.DataFrame, to_freq: str) -> pd.DataFrame:
     no = int(ni*oi_ratio)
 
     A = np.zeros((no, ni))
-    
+
     for i in range(ni):
         A[int(i*oi_ratio):int((i+1)*oi_ratio), i] = 1/oi_ratio
 
