@@ -183,16 +183,16 @@ class Indicator(Formula):
     def what(self):
         correction = f'{self._correction_name}*' if self._correction_name else ''
         if self._weight_names:
-            weighted_indicators = (
+            aggregated_indicators = (
                 '+'.join(['*'.join([x.lower(), y.lower()]) for x, y in
                           zip(self._weight_names, self._indicator_names)])
             )
         else:
-            weighted_indicators = (
+            aggregated_indicators = (
                 '+'.join([x.lower() for x in self._indicator_names])
             )
 
-        numerator = f'{correction}({weighted_indicators})'
+        numerator = f'{correction}({aggregated_indicators})'
         denominator = f'{self._aggregation}({numerator}<date {self.baseyear}>)'
         fraction = f'{numerator}/{denominator}'
 
@@ -339,16 +339,16 @@ class FDeflate(Formula):
     def what(self):
         correction = f'{self._correction_name}*' if self._correction_name else ''
         if self._weight_names:
-            weighted_indicators = (
+            aggregated_indicators = (
                 '+'.join(['*'.join([x.lower(), y.lower()]) for x, y in
                           zip(self._weight_names, self._indicator_names)])
             )
         else:
-            weighted_indicators = (
+            aggregated_indicators = (
                 '+'.join([x.lower() for x in self._indicator_names])
             )
 
-        numerator = f'{correction}{self._formula.name}/({weighted_indicators})'
+        numerator = f'{correction}{self._formula.name}/({aggregated_indicators})'
         denominator = f'sum({numerator}<date {self.baseyear}>)'
         fraction = f'({numerator})/{denominator}'
 
@@ -456,16 +456,16 @@ class FInflate(Formula):
     def what(self):
         correction = f'{self._correction_name}*' if self._correction_name else ''
         if self._weight_names:
-            weighted_indicators = (
+            aggregated_indicators = (
                 '+'.join(['*'.join([x.lower(), y.lower()]) for x, y in
                           zip(self._weight_names, self._indicator_names)])
             )
         else:
-            weighted_indicators = (
+            aggregated_indicators = (
                 '+'.join([x.lower() for x in self._indicator_names])
             )
 
-        numerator = f'{correction}{self._formula.name}*({weighted_indicators})'
+        numerator = f'{correction}{self._formula.name}*({aggregated_indicators})'
         denominator = f'sum({numerator}<date {self.baseyear}>)'
         fraction = f'({numerator})/{denominator}'
 
