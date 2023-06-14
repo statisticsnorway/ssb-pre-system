@@ -52,7 +52,10 @@ class PreSystem:
 
     @baseyear.setter
     def baseyear(self, baseyear):
-        Formula.set_baseyear(baseyear)
+        if isinstance(basyear, int) is False:
+            raise TypeError('baseyear must be int')
+        for key, val in self.formulae.items():
+            val.baseyear = baseyear
         self._baseyear = baseyear
 
     @annual_df.setter
