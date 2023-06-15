@@ -27,11 +27,16 @@ class Formula:
         if isinstance(name, str) is False:
             raise TypeError('name must be str')
         self._name = name.lower()
+        self._baseyear = None
         self._calls_on = None
 
     @property
     def name(self):
         return self._name
+
+    @property
+    def baseyear(self):
+        return self._baseyear
 
     @property
     def what(self):
@@ -41,9 +46,11 @@ class Formula:
     def calls_on(self):
         return self._calls_on
 
-    @property
-    def baseyear(self):
-        return Formula._baseyear
+    @baseyear.setter
+    def baseyear(self, baseyear):
+        if isinstance(baseyear, int) is False:
+            raise TypeError('baseyear must be int')
+        self._baseyear = baseyear
 
     def __repr__(self):
         return f'Formula: {self.name} = {self.what}'
@@ -53,26 +60,6 @@ class Formula:
         print(f'{" "*i}{self.name} = {what}')
         for _, val in self.calls_on.items():
             val.info(i+1)
-
-    @classmethod
-    def set_baseyear(cls, baseyear):
-        """
-        Set the base year for the formula.
-
-        Parameters
-        ----------
-        baseyear : int
-            The base year to be set.
-
-        Raises
-        ------
-        ValueError
-            If `baseyear` is not an integer.
-        """
-        if isinstance(baseyear, int):
-            cls._baseyear = baseyear
-        else:
-            raise ValueError('baseyear must be int')
 
     def evaluate(self,
                  annual_df: pd.DataFrame,

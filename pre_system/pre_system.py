@@ -52,7 +52,10 @@ class PreSystem:
 
     @baseyear.setter
     def baseyear(self, baseyear):
-        Formula.set_baseyear(baseyear)
+        if isinstance(baseyear, int) is False:
+            raise TypeError('baseyear must be int')
+        for _, formula in self.formulae.items():
+            formula.baseyear = baseyear
         self._baseyear = baseyear
 
     @annual_df.setter
@@ -208,7 +211,7 @@ class PreSystem:
                     f'Formula name {formula.name} already exists and points to a different formula'
                 )
 
-    def formula(self, formula_name):
+    def formula(self, name):
         """
         Get a formula from the PreSystem.
 
@@ -222,7 +225,7 @@ class PreSystem:
         Formula or None
             The requested formula, or None if it doesn't exist.
         """
-        return self.formulae.get(formula_name)
+        return self.formulae.get(name)
 
     @property
     def evaluate(self) -> pd.DataFrame:
@@ -235,9 +238,13 @@ class PreSystem:
             The evaluated formulas as a DataFrame.
         """
         evaluate_df = pd.DataFrame()
+        
+        for _, formula in self.formulae.items():
+            if formula.baseyear != self.baseyear:
+                raise AttributeError(f'baseyear for formula {formula.name} is not {self.baseyear}')
 
-        for formula_name, formula in self.formulae.items():
-            evaluate_df[formula_name] = (
+        for name, formula in self.formulae.items():
+            evaluate_df[name] = (
                 formula
                 .evaluate(
                     self._annual_df,
@@ -249,7 +256,7 @@ class PreSystem:
 
         return evaluate_df
 
-    def evaluate_formula(self, formula_name: str) -> pd.Series:
+    def evaluate_formula(self, name: str) -> pd.Series:
         """
         Evaluate a specific formula using the provided data.
 
@@ -263,12 +270,12 @@ class PreSystem:
         pd.Series
             The evaluated formula as a Series.
         """
-        formula = self.formulae.get(formula_name)
+        formula = self.formulae.get(name)
         
         if formula is not None:
             return (
                 self
-                ._formulae.get(formula_name)
+                ._formulae.get(name)
                 .evaluate(
                     self._annual_df,
                     self._indicator_df,
@@ -277,4 +284,4 @@ class PreSystem:
                     )
             )
         else:
-            raise NameError(f'formula {formula_name} is not in PreSystem {self.name}')
+            raise NameError(f'formula {name} is not in PreSystem {self.name}')
