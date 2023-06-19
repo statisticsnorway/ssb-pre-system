@@ -238,7 +238,7 @@ class PreSystem:
             The evaluated formulas as a DataFrame.
         """
         evaluate_df = pd.DataFrame()
-        
+
         for _, formula in self.formulae.items():
             if formula.baseyear != self.baseyear:
                 raise AttributeError(f'baseyear for formula {formula.name} is not {self.baseyear}')
