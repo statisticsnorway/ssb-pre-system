@@ -359,16 +359,21 @@ class FDeflate(Formula):
             raise NameError(f'All of {",".join(self._indicators)} is not in indicators_df')
 
         if self._weights:
-            if weights_df is None:
-                raise NameError(f'{self.name} expects weights_df')
-            if all(x in weights_df.columns for x in self._weights) is False:
-                raise NameError(f'All of {",".join(self._weights)} is not in weights_df')
+            if all(isinstance(x, str) for x in self._weights):
+                if weights_df is None:
+                    raise NameError(f'{self.name} expects weights_df')
+                if all(x in weights_df.columns for x in self._weights) is False:
+                    missing = [x for x in self._weights if x not in weights_df.columns]
+                    raise NameError(f'Cannot find {",".join(missing)} in weights_df')
 
             indicator_matrix = indicators_df[self._indicators].to_numpy()
-            weight_vector = (
-                weights_df[weights_df.index.year == self.baseyear][self._weights]
-                .to_numpy()
-            )
+            if all(isinstance(x, str) for x in self._weights):
+                weight_vector = (
+                    weights_df[weights_df.index.year == self.baseyear][self._weights]
+                    .to_numpy()
+                )
+            if all(isinstance(x, float) for x in self._weights):
+                weight_vector = np.array([self._weights])
 
             weighted_indicators = pd.Series(
                 indicator_matrix.dot(weight_vector.transpose())[:, 0],
@@ -476,16 +481,21 @@ class FInflate(Formula):
             raise NameError(f'All of {",".join(self._indicators)} is not in indicators_df')
 
         if self._weights:
-            if weights_df is None:
-                raise NameError(f'{self.name} expects weights_df')
-            if all(x in weights_df.columns for x in self._weights) is False:
-                raise NameError(f'All of {",".join(self._weights)} is not in weights_df')
+            if all(isinstance(x, str) for x in self._weights):
+                if weights_df is None:
+                    raise NameError(f'{self.name} expects weights_df')
+                if all(x in weights_df.columns for x in self._weights) is False:
+                    missing = [x for x in self._weights if x not in weights_df.columns]
+                    raise NameError(f'Cannot find {",".join(missing)} in weights_df')
 
             indicator_matrix = indicators_df[self._indicators].to_numpy()
-            weight_vector = (
-                weights_df[weights_df.index.year == self.baseyear][self._weights]
-                .to_numpy()
-            )
+            if all(isinstance(x, str) for x in self._weights):
+                weight_vector = (
+                    weights_df[weights_df.index.year == self.baseyear][self._weights]
+                    .to_numpy()
+                )
+            if all(isinstance(x, float) for x in self._weights):
+                weight_vector = np.array([self._weights])
 
             weighted_indicators = pd.Series(
                 indicator_matrix.dot(weight_vector.transpose())[:, 0],
