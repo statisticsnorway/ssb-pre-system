@@ -370,16 +370,16 @@ class FDeflate(Formula):
                 .to_numpy()
             )
 
-            aggregatet_indicators = pd.Series(
+            weighted_indicators = pd.Series(
                 indicator_matrix.dot(weight_vector.transpose())[:, 0],
                 index=indicators_df.index
             )
         else:
-            aggregatet_indicators = indicators_df[self._indicators].sum(axis=1, skipna=False)
+            weighted_indicators = indicators_df[self._indicators].sum(axis=1, skipna=False)
 
         evaluated_formula = self._formula.evaluate(*all_dfs)
 
-        formula_divided = evaluated_formula.div(aggregatet_indicators)
+        formula_divided = evaluated_formula.div(weighted_indicators)
 
         if self._correction:
             if correction_df is None:
@@ -487,16 +487,16 @@ class FInflate(Formula):
                 .to_numpy()
             )
 
-            aggregatet_indicators = pd.Series(
+            weighted_indicators = pd.Series(
                 indicator_matrix.dot(weight_vector.transpose())[:, 0],
                 index=indicators_df.index
             )
         else:
-            aggregatet_indicators = indicators_df[self._indicators].sum(axis=1, skipna=False)
+            weighted_indicators = indicators_df[self._indicators].sum(axis=1, skipna=False)
 
         evaluated_formula = self._formula.evaluate(*all_dfs)
 
-        formula_divided = evaluated_formula*aggregatet_indicators
+        formula_divided = evaluated_formula*weighted_indicators
 
         if self._correction:
             if correction_df is None:
