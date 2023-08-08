@@ -271,7 +271,7 @@ class PreSystem:
             The evaluated formula as a Series.
         """
         formula = self.formulae.get(name)
-        
+
         if formula is not None:
             return (
                 self
