@@ -243,15 +243,23 @@ class PreSystem:
             if formula.baseyear != self.baseyear:
                 raise AttributeError(f'baseyear for formula {formula.name} is not {self.baseyear}')
 
+        evaluate_df = pd.DataFrame()
+
         for name, formula in self.formulae.items():
-            evaluate_df[name] = (
-                formula
-                .evaluate(
-                    self._annual_df,
-                    self._indicator_df,
-                    self._weight_df,
-                    self._correction_df
-                )
+            evaluate_df = pd.concat(
+                [
+                    evaluate_df,
+                    pd.DataFrame(
+                        formula
+                        .evaluate(
+                            self._annual_df,
+                            self._indicator_df,
+                            self._weight_df,
+                            self._correction_df),
+                        columns=[name]
+                    )
+                ],
+                axis=1
             )
 
         return evaluate_df
