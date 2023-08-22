@@ -35,6 +35,13 @@ class PreSystem:
         return self._formulae
 
     @property
+    def indicators(self):
+        indicator_set = set()
+        for _, formula in self.formulae.items():
+            indicator_set = indicator_set.union(formula.indicators)
+        return list(indicator_set)
+
+    @property
     def annual_df(self):
         return self._annual_df
 
