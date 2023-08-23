@@ -46,6 +46,10 @@ class Formula:
     def calls_on(self):
         return self._calls_on
 
+    @property
+    def indicators(self):
+        return None
+
     @baseyear.setter
     def baseyear(self, baseyear):
         if isinstance(baseyear, int) is False:
@@ -165,6 +169,10 @@ class Indicator(Formula):
             raise NameError('aggregation must be sum or avg')
         self._aggregation = aggregation.lower()
         self._calls_on = {}
+
+    @property
+    def indicators(self):
+        return self._indicators
 
     @property
     def what(self):
@@ -327,6 +335,10 @@ class FDeflate(Formula):
         self._calls_on = {formula.name: formula}
 
     @property
+    def indicators(self):
+        return list(set(self._indicators).union(self._formula.indicators))
+
+    @property
     def what(self):
         correction = f'{self._correction}*' if self._correction else ''
         if self._weights:
@@ -449,6 +461,10 @@ class FInflate(Formula):
         self._calls_on = {formula.name: formula}
 
     @property
+    def indicators(self):
+        return list(set(self._indicators).union(self._formula.indicators))
+
+    @property
     def what(self):
         correction = f'{self._correction}*' if self._correction else ''
         if self._weights:
@@ -555,6 +571,13 @@ class FSum(Formula):
         self._calls_on = {x.name: x for x in formulae}
 
     @property
+    def indicators(self):
+        indicator_set = set()
+        for formula in self._formulae:
+            indicator_set = indicator_set.union(formula.indicators)
+        return list(indicator_set)
+
+    @property
     def what(self):
         return '+'.join([x.name for x in self._formulae])
 
@@ -637,6 +660,13 @@ class FSumProd(Formula):
         self._calls_on = {x.name: x for x in formulae}
 
     @property
+    def indicators(self):
+        indicator_set = set()
+        for formula in self._formulae:
+            indicator_set = indicator_set.union(formula.indicators)
+        return list(indicator_set)
+
+    @property
     def what(self):
         return '+'.join(['*'.join([x.name, str(y)]) for x, y in
                          zip(self._formulae, self._coefficients)])
@@ -700,6 +730,10 @@ class FMult(Formula):
         self._formula1 = formula1
         self._formula2 = formula2
         self._calls_on = {formula1.name: formula1, formula2.name: formula2}
+
+    @property
+    def indicators(self):
+        return list(set(self._formula1.indicators).union(self._formula2.indicators))
 
     @property
     def what(self):
@@ -767,6 +801,10 @@ class FDiv(Formula):
         self._formula1 = formula1
         self._formula2 = formula2
         self._calls_on = {formula1.name: formula1, formula2.name: formula2}
+
+    @property
+    def indicators(self):
+        return list(set(self._formula1.indicators).union(self._formula2.indicators))
 
     @property
     def what(self):
