@@ -162,7 +162,7 @@ class Indicator(Formula):
         if weights and len(weights) != len(indicators):
             raise IndexError('weight_names must have same length as indicator_names')
         self._annual = annual
-        self._indicators = indicators
+        self._indicators = [x.strip() for x in indicators]
         self._weights = weights
         self._correction = correction
         if aggregation.lower() not in ['sum', 'avg']:
@@ -329,7 +329,7 @@ class FDeflate(Formula):
         if weights and len(weights) != len(indicators):
             raise IndexError('weight_names must have same length as indicator_names')
         self._formula = formula
-        self._indicators = indicators
+        self._indicators = [x.strip() for x in indicators]
         self._weights = weights
         self._correction = correction
         self._calls_on = {formula.name: formula}
@@ -455,7 +455,7 @@ class FInflate(Formula):
         if weights and len(weights) != len(indicators):
             raise IndexError('weight_names must have same length as indicator_names')
         self._formula = formula
-        self._indicators = indicators
+        self._indicators = [x.strip() for x in indicators]
         self._weights = weights
         self._correction = correction
         self._calls_on = {formula.name: formula}
@@ -1017,4 +1017,102 @@ class AddCorr(Formula):
             correction_df[self._correction_name]
             + self._formula.evaluate(*all_dfs)
             - correction_df[correction_df.index.year == self.baseyear][self._correction_name].mean()
+        )
+
+
+class FJoin(Formula):
+    def __init__(self,
+                 name: str,
+                 formula1: Formula,
+                 formula2: Formula,
+                 from_year: int):
+        """
+        Initialize an FJoin object.
+
+        Parameters
+        ----------
+        name : str
+            The name of the FJoin formula.
+        formula1 : Formula
+            The Formula object to be joined starting in from_year.
+        formula2 : Formula
+            The Formula object to be joined ending before from_year.
+        from_year : str
+            The year to join formula1 and formula2
+
+        Raises
+        ------
+        TypeError
+            If formula1 is not of type Formula.
+        TypeError
+            If formula2 is not of type Formula.
+        TypeError
+            If from year is not of type str.
+        """
+        super().__init__(name)
+        if isinstance(formula1, Formula) and isinstance(formula1, Formula) is False:
+            raise TypeError('formula1 and formula2 must be of type Formula')
+        if isinstance(from_year, int) is False:
+            raise TypeError('from_year must must be of type int')
+        self._formula1 = formula1
+        self._formula2 = formula2
+        self._from_year = from_year
+        self._calls_on = {formula1.name: formula1, formula2.name: formula2}
+
+    @property
+    def indicators(self):
+        return list(set(self._formula1.indicators).union(self._formula2.indicators))
+
+    @property
+    def what(self):
+        return f'{self._formula1.name} if year>={self._from_year} else {self._formula2.name}'
+
+    def evaluate(self,
+                 annual_df: pd.DataFrame,
+                 indicators_df: pd.DataFrame,
+                 weights_df: pd.DataFrame = None,
+                 correction_df: pd.DataFrame = None) -> pd.Series:
+        """
+        Evaluate the data using the provided DataFrames and return the evaluated series.
+
+        Parameters
+        ----------
+        annual_df : pd.DataFrame
+            The DataFrame containing annual data.
+        indicators_df : pd.DataFrame
+            The DataFrame containing indicator data.
+        weights_df : pd.DataFrame, optional
+            The DataFrame containing weight data. Defaults to None.
+        correction_df : pd.DataFrame, optional
+            The DataFrame containing correction data. Defaults to None.
+
+        Raises
+        ------
+        ValueError
+            If the baseyear is not set.
+        TypeError
+            If any of the input DataFrames is not of type pd.DataFrame.
+        AttributeError
+            If the index of any DataFrame is not of type pd.PeriodIndex or has incorrect frequency.
+        IndexError
+            If the baseyear is out of range for any of the DataFrames.
+        NameError
+            If the required column names are not present in the DataFrames.
+
+        Returns
+        -------
+        pd.Series
+            The evaluated series.
+        """
+        all_dfs = (annual_df, indicators_df, weights_df, correction_df)
+        super().evaluate(*all_dfs)
+
+        evaluated_formula1 = self._formula1.evaluate(*all_dfs)
+        evaluated_formula2 = self._formula2.evaluate(*all_dfs)
+
+        return pd.concat(
+            [
+                evaluated_formula2[evaluated_formula2.index.year < self._from_year],
+                evaluated_formula1[evaluated_formula1.index.year >= self._from_year]
+            ]
         )
