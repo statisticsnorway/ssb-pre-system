@@ -162,7 +162,7 @@ class Indicator(Formula):
         if weights and len(weights) != len(indicators):
             raise IndexError('weight_names must have same length as indicator_names')
         self._annual = annual
-        self._indicators = indicators
+        self._indicators = [x.strip() for x in indicators]
         self._weights = weights
         self._correction = correction
         if aggregation.lower() not in ['sum', 'avg']:
@@ -329,7 +329,7 @@ class FDeflate(Formula):
         if weights and len(weights) != len(indicators):
             raise IndexError('weight_names must have same length as indicator_names')
         self._formula = formula
-        self._indicators = indicators
+        self._indicators = [x.strip() for x in indicators]
         self._weights = weights
         self._correction = correction
         self._calls_on = {formula.name: formula}
@@ -455,7 +455,7 @@ class FInflate(Formula):
         if weights and len(weights) != len(indicators):
             raise IndexError('weight_names must have same length as indicator_names')
         self._formula = formula
-        self._indicators = indicators
+        self._indicators = [x.strip() for x in indicators]
         self._weights = weights
         self._correction = correction
         self._calls_on = {formula.name: formula}
@@ -1018,3 +1018,39 @@ class AddCorr(Formula):
             + self._formula.evaluate(*all_dfs)
             - correction_df[correction_df.index.year == self.baseyear][self._correction_name].mean()
         )
+
+
+class FJoin(Formula):
+    def __init__(self,
+                 name: str,
+                 formula1: Formula,
+                 formula2: Formula,
+                 from_year: int):
+        """
+        Doc
+        """
+        super().__init__(name)
+        if isinstance(formula1, Formula) and isinstance(formula1, Formula) is False:
+            raise TypeError('formula1 and formula2 must be of type Formula')
+        if isinstance(from_year, int) is False:
+            raise TypeError('from_year must must be of type int')
+        self._formula1 = formula1
+        self._formula2 = formula2
+        self._from_year = from_year
+        self._calls_on = {formula1.name: formula1, formula2.name: formula2}
+
+    @property
+    def indicators(self):
+        return list(set(self._formula1.indicators).union(self._formula2.indicators))
+
+    @property
+    def what(self):
+        return f'{self._formula1.what} if year>={self._from_year} else {self._formula2.what}'
+
+    def evaluate(self,
+                 annual_df: pd.DataFrame,
+                 indicators_df: pd.DataFrame,
+                 weights_df: pd.DataFrame = None,
+                 correction_df: pd.DataFrame = None) -> pd.Series:
+
+        pass
