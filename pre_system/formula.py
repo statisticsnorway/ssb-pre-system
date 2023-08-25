@@ -1065,7 +1065,7 @@ class FJoin(Formula):
 
     @property
     def what(self):
-        return f'{self._formula1.what} if year>={self._from_year} else {self._formula2.what}'
+        return f'{self._formula1.name} if year>={self._from_year} else {self._formula2.name}'
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
