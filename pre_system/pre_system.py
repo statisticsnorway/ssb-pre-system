@@ -88,6 +88,7 @@ class PreSystem:
             raise AttributeError('annual_df.index must be Pandas.PeriodIndex')
         if annual_df.index.freq != 'a':
             raise AttributeError('annual_df must have annual frequency')
+        self._check_missing(annual_df)
         self._annual_df = annual_df
         self._annual_df_updated = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -112,6 +113,7 @@ class PreSystem:
             raise TypeError('indicator_df must be a Pandas.DataFrame')
         if isinstance(indicator_df.index, pd.PeriodIndex) is False:
             raise AttributeError('indicators_df.index must be Pandas.PeriodIndex')
+        self._check_missing(indicator_df)
         self._indicator_df = indicator_df
         self._indicator_df_updated = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -138,6 +140,7 @@ class PreSystem:
             raise AttributeError('weights_df.index must be Pandas.PeriodIndex')
         if weight_df.index.freq != 'a':
             raise AttributeError('weights_df must have annual frequency')
+        self._check_missing(weight_df)
         self._weight_df = weight_df
         self._weight_df_updated = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -162,8 +165,15 @@ class PreSystem:
             raise TypeError('correction_df must be a Pandas.DataFrame')
         if isinstance(correction_df.index, pd.PeriodIndex) is False:
             raise AttributeError('correction_df.index must be Pandas.PeriodIndex')
+        self._check_missing(correction_df)
         self._correction_df = correction_df
         self._correction_df_updated = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    @staticmethod
+    def _check_missing(df):
+        count_missing = df.isna().sum()
+        if count_missing.sum() > 0:
+            print(f'WARNING: there are NaN values in {",".join([y for x, y in zip(count_missing, count_missing.index) if x > 0])}')
 
     def __repr__(self):
         return f'PreSystem: {self.name}'
