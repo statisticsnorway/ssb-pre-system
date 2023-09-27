@@ -59,6 +59,25 @@ class Formula:
     def __repr__(self):
         return f'Formula: {self.name} = {self.what}'
 
+    def __call__(self,
+                 annual_df: pd.DataFrame,
+                 indicators_df: pd.DataFrame,
+                 weights_df: pd.DataFrame = None,
+                 correction_df: pd.DataFrame = None):
+        return self.evaluate(annual_df,
+                             indicators_df,
+                             weights_df,
+                             correction_df)
+
+    def __add__(self, other):
+        return FSum(f'{self.name}+{other.name}', self, other)
+
+    def __mul__(self, other):
+        return FMult(f'{self.name}*{other.name}', self, other)
+
+    def __truediv__(self, other):
+        return FDiv(f'{self.name}/{other.name}', self, other)
+
     def info(self, i=0):
         what = self.what if len(self.what) <= 100 else '...'
         print(f'{" "*i}{self.name} = {what}')
