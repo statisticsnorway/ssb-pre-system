@@ -905,6 +905,18 @@ class MultCorr(Formula):
         self._calls_on = formula._calls_on
 
     @property
+    def baseyear(self):
+        return self._baseyear
+
+    @baseyear.setter
+    def baseyear(self, baseyear):
+        if isinstance(baseyear, int) is False:
+            raise TypeError('baseyear must be int')
+        self._baseyear = baseyear
+        # Passign baseyear onto formula that goes into correction
+        self._formula.baseyear = baseyear
+
+    @property
     def what(self):
         return (
             f'sum(({self._formula.what})<date {self.baseyear}>)*'
@@ -987,6 +999,18 @@ class AddCorr(Formula):
         self._formula = formula
         self._correction_name = correction_name
         self._calls_on = formula.calls_on
+
+    @property
+    def baseyear(self):
+        return self._baseyear
+
+    @baseyear.setter
+    def baseyear(self, baseyear):
+        if isinstance(baseyear, int) is False:
+            raise TypeError('baseyear must be int')
+        self._baseyear = baseyear
+        # Passign baseyear onto formula that goes into correction
+        self._formula.baseyear = baseyear
 
     @property
     def what(self):
