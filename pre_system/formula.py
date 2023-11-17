@@ -365,15 +365,15 @@ class FDeflate(Formula):
     def indicators(self):
         indicators = []
         for formula in self._formulae:
-            indicators = indicators.extend(formula.indicators)
+            indicators = indicators.extend(if formula.indicators then formula.indicators else [])
         return indicators
 
     @property
     def weights(self):
         weight = []
         for formula in self._formulae:
-            weight = weight.extend(formula._weights)
-        return weight
+            weight = weight.extend(if formula._weights then formula._weights else [])
+        return weights
 
     @property
     def what(self):
@@ -501,15 +501,15 @@ class FInflate(Formula):
     def indicators(self):
         indicators = []
         for formula in self._formulae:
-            indicators = indicators.extend(formula.indicators)
+            indicators = indicators.extend(if formula.indicators then formula.indicators else [])
         return indicators
 
     @property
     def weights(self):
         weight = []
         for formula in self._formulae:
-            weight = weight.extend(formula._weights)
-        return weight
+            weight = weight.extend(if formula._weights then formula._weights else [])
+        return weights
 
     @property
     def what(self):
@@ -621,15 +621,15 @@ class FSum(Formula):
     def indicators(self):
         indicators = []
         for formula in self._formulae:
-            indicators = indicators.extend(formula.indicators)
+            indicators = indicators.extend(if formula.indicators then formula.indicators else [])
         return indicators
 
     @property
     def weights(self):
         weight = []
         for formula in self._formulae:
-            weight = weight.extend(formula._weights)
-        return weight
+            weight = weight.extend(if formula._weights then formula._weights else [])
+        return weights
 
     @property
     def what(self):
@@ -717,15 +717,15 @@ class FSumProd(Formula):
     def indicators(self):
         indicators = []
         for formula in self._formulae:
-            indicators = indicators.extend(formula.indicators)
+            indicators = indicators.extend(if formula.indicators then formula.indicators else [])
         return indicators
 
     @property
     def weights(self):
         weight = []
         for formula in self._formulae:
-            weight = weight.extend(formula._weights)
-        return weight
+            weight = weight.extend(if formula._weights then formula._weights else [])
+        return weights
 
     @property
     def what(self):
@@ -796,15 +796,15 @@ class FMult(Formula):
     def indicators(self):
         indicators = []
         for formula in self._formulae:
-            indicators = indicators.extend(formula.indicators)
+            indicators = indicators.extend(if formula.indicators then formula.indicators else [])
         return indicators
 
     @property
     def weights(self):
         weight = []
         for formula in self._formulae:
-            weight = weight.extend(formula._weights)
-        return weight
+            weight = weight.extend(if formula._weights then formula._weights else [])
+        return weights
 
     @property
     def what(self):
@@ -877,15 +877,15 @@ class FDiv(Formula):
     def indicators(self):
         indicators = []
         for formula in self._formulae:
-            indicators = indicators.extend(formula.indicators)
+            indicators = indicators.extend(if formula.indicators then formula.indicators else [])
         return indicators
 
     @property
     def weights(self):
         weight = []
         for formula in self._formulae:
-            weight = weight.extend(formula._weights)
-        return weight
+            weight = weight.extend(if formula._weights then formula._weights else [])
+        return weights
 
     @property
     def what(self):
