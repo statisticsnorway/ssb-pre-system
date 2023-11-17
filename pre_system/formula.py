@@ -50,6 +50,10 @@ class Formula:
     def indicators(self):
         return None
 
+    @property
+    def weight(self):
+        return None
+
     @baseyear.setter
     def baseyear(self, baseyear):
         if isinstance(baseyear, int) is False:
@@ -192,6 +196,10 @@ class Indicator(Formula):
     @property
     def indicators(self):
         return self._indicators
+
+    @property
+    def weight(self):
+        return return self._weights
 
     @property
     def what(self):
@@ -358,6 +366,10 @@ class FDeflate(Formula):
         return list(set(self._indicators).union(self._formula.indicators))
 
     @property
+    def weight(self):
+        return return self._weights
+
+    @property
     def what(self):
         correction = f'{self._correction}*' if self._correction else ''
         if self._weights:
@@ -482,6 +494,10 @@ class FInflate(Formula):
     @property
     def indicators(self):
         return list(set(self._indicators).union(self._formula.indicators))
+
+    @property
+    def weight(self):
+        return return self._weights
 
     @property
     def what(self):
@@ -653,7 +669,7 @@ class FSumProd(Formula):
     def __init__(self,
                  name,
                  formulae: list[Formula],
-                 coefficients: list[float]):
+                 coefficients: list[float] | list[str]):
         """
         Initialize an FSumProd object.
 
