@@ -198,8 +198,8 @@ class Indicator(Formula):
         return self._indicators
 
     @property
-    def weight(self):
-        return return self._weights
+    def weights(self):
+        return self._weights
 
     @property
     def what(self):
@@ -363,11 +363,17 @@ class FDeflate(Formula):
 
     @property
     def indicators(self):
-        return list(set(self._indicators).union(self._formula.indicators))
+        indicators = []
+        for formula in self._formulae:
+            indicators = indicators.extend(formula.indicators)
+        return indicators
 
     @property
-    def weight(self):
-        return return self._weights
+    def weights(self):
+        weight = []
+        for formula in self._formulae:
+            weight = weight.extend(formula._weights)
+        return weight
 
     @property
     def what(self):
@@ -493,11 +499,17 @@ class FInflate(Formula):
 
     @property
     def indicators(self):
-        return list(set(self._indicators).union(self._formula.indicators))
+        indicators = []
+        for formula in self._formulae:
+            indicators = indicators.extend(formula.indicators)
+        return indicators
 
     @property
-    def weight(self):
-        return return self._weights
+    def weights(self):
+        weight = []
+        for formula in self._formulae:
+            weight = weight.extend(formula._weights)
+        return weight
 
     @property
     def what(self):
@@ -607,10 +619,17 @@ class FSum(Formula):
 
     @property
     def indicators(self):
-        indicator_set = set()
+        indicators = []
         for formula in self._formulae:
-            indicator_set = indicator_set.union(formula.indicators)
-        return list(indicator_set)
+            indicators = indicators.extend(formula.indicators)
+        return indicators
+
+    @property
+    def weights(self):
+        weight = []
+        for formula in self._formulae:
+            weight = weight.extend(formula._weights)
+        return weight
 
     @property
     def what(self):
@@ -696,10 +715,17 @@ class FSumProd(Formula):
 
     @property
     def indicators(self):
-        indicator_set = set()
+        indicators = []
         for formula in self._formulae:
-            indicator_set = indicator_set.union(formula.indicators)
-        return list(indicator_set)
+            indicators = indicators.extend(formula.indicators)
+        return indicators
+
+    @property
+    def weights(self):
+        weight = []
+        for formula in self._formulae:
+            weight = weight.extend(formula._weights)
+        return weight
 
     @property
     def what(self):
@@ -768,7 +794,17 @@ class FMult(Formula):
 
     @property
     def indicators(self):
-        return list(set(self._formula1.indicators).union(self._formula2.indicators))
+        indicators = []
+        for formula in self._formulae:
+            indicators = indicators.extend(formula.indicators)
+        return indicators
+
+    @property
+    def weights(self):
+        weight = []
+        for formula in self._formulae:
+            weight = weight.extend(formula._weights)
+        return weight
 
     @property
     def what(self):
@@ -839,7 +875,17 @@ class FDiv(Formula):
 
     @property
     def indicators(self):
-        return list(set(self._formula1.indicators).union(self._formula2.indicators))
+        indicators = []
+        for formula in self._formulae:
+            indicators = indicators.extend(formula.indicators)
+        return indicators
+
+    @property
+    def weights(self):
+        weight = []
+        for formula in self._formulae:
+            weight = weight.extend(formula._weights)
+        return weight
 
     @property
     def what(self):
