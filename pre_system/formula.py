@@ -363,16 +363,16 @@ class FDeflate(Formula):
 
     @property
     def indicators(self):
-        indicators = []
+        indicators = self._indicators
         for formula in self._formulae:
-            indicators = indicators.extend(if formula.indicators then formula.indicators else [])
+            indicators.extend(formula.indicators if formula.indicators else [])
         return indicators
 
     @property
     def weights(self):
-        weight = []
+        weights = self._weights
         for formula in self._formulae:
-            weight = weight.extend(if formula._weights then formula._weights else [])
+            weights.extend(formula._weights if formula._weights else [])
         return weights
 
     @property
@@ -499,16 +499,16 @@ class FInflate(Formula):
 
     @property
     def indicators(self):
-        indicators = []
+        indicators = self._indicators
         for formula in self._formulae:
-            indicators = indicators.extend(if formula.indicators then formula.indicators else [])
+            indicators.extend(formula.indicators if formula.indicators else [])
         return indicators
 
     @property
     def weights(self):
-        weight = []
+        weights = self._weights
         for formula in self._formulae:
-            weight = weight.extend(if formula._weights then formula._weights else [])
+            weights.extend(formula._weights if formula._weights else [])
         return weights
 
     @property
@@ -621,14 +621,14 @@ class FSum(Formula):
     def indicators(self):
         indicators = []
         for formula in self._formulae:
-            indicators = indicators.extend(if formula.indicators then formula.indicators else [])
+            indicators.extend(formula.indicators if formula.indicators else [])
         return indicators
 
     @property
     def weights(self):
-        weight = []
+        weights = []
         for formula in self._formulae:
-            weight = weight.extend(if formula._weights then formula._weights else [])
+            weights.extend(formula._weights if formula._weights else [])
         return weights
 
     @property
@@ -717,14 +717,14 @@ class FSumProd(Formula):
     def indicators(self):
         indicators = []
         for formula in self._formulae:
-            indicators = indicators.extend(if formula.indicators then formula.indicators else [])
+            indicators.extend(formula.indicators if formula.indicators else [])
         return indicators
 
     @property
     def weights(self):
-        weight = []
+        weights = []
         for formula in self._formulae:
-            weight = weight.extend(if formula._weights then formula._weights else [])
+            weights.extend(formula._weights if formula._weights else [])
         return weights
 
     @property
@@ -796,14 +796,14 @@ class FMult(Formula):
     def indicators(self):
         indicators = []
         for formula in self._formulae:
-            indicators = indicators.extend(if formula.indicators then formula.indicators else [])
+            indicators.extend(formula.indicators if formula.indicators else [])
         return indicators
 
     @property
     def weights(self):
-        weight = []
+        weights = []
         for formula in self._formulae:
-            weight = weight.extend(if formula._weights then formula._weights else [])
+            weights.extend(formula._weights if formula._weights else [])
         return weights
 
     @property
@@ -877,14 +877,14 @@ class FDiv(Formula):
     def indicators(self):
         indicators = []
         for formula in self._formulae:
-            indicators = indicators.extend(if formula.indicators then formula.indicators else [])
+            indicators.extend(formula.indicators if formula.indicators else [])
         return indicators
 
     @property
     def weights(self):
-        weight = []
+        weights = []
         for formula in self._formulae:
-            weight = weight.extend(if formula._weights then formula._weights else [])
+            weights.extend(formula._weights if formula._weights else [])
         return weights
 
     @property
