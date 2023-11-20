@@ -50,6 +50,10 @@ class Formula:
     def indicators(self):
         return None
 
+    @property
+    def weight(self):
+        return None
+
     @baseyear.setter
     def baseyear(self, baseyear):
         if isinstance(baseyear, int) is False:
@@ -192,6 +196,10 @@ class Indicator(Formula):
     @property
     def indicators(self):
         return self._indicators
+
+    @property
+    def weights(self):
+        return self._weights
 
     @property
     def what(self):
@@ -355,7 +363,17 @@ class FDeflate(Formula):
 
     @property
     def indicators(self):
-        return list(set(self._indicators).union(self._formula.indicators))
+        indicators = self._indicators
+        for formula in self._formulae:
+            indicators.extend(formula.indicators if formula.indicators else [])
+        return indicators
+
+    @property
+    def weights(self):
+        weights = self._weights
+        for formula in self._formulae:
+            weights.extend(formula._weights if formula._weights else [])
+        return weights
 
     @property
     def what(self):
@@ -481,7 +499,17 @@ class FInflate(Formula):
 
     @property
     def indicators(self):
-        return list(set(self._indicators).union(self._formula.indicators))
+        indicators = self._indicators
+        for formula in self._formulae:
+            indicators.extend(formula.indicators if formula.indicators else [])
+        return indicators
+
+    @property
+    def weights(self):
+        weights = self._weights
+        for formula in self._formulae:
+            weights.extend(formula._weights if formula._weights else [])
+        return weights
 
     @property
     def what(self):
@@ -591,10 +619,17 @@ class FSum(Formula):
 
     @property
     def indicators(self):
-        indicator_set = set()
+        indicators = []
         for formula in self._formulae:
-            indicator_set = indicator_set.union(formula.indicators)
-        return list(indicator_set)
+            indicators.extend(formula.indicators if formula.indicators else [])
+        return indicators
+
+    @property
+    def weights(self):
+        weights = []
+        for formula in self._formulae:
+            weights.extend(formula._weights if formula._weights else [])
+        return weights
 
     @property
     def what(self):
@@ -653,7 +688,7 @@ class FSumProd(Formula):
     def __init__(self,
                  name,
                  formulae: list[Formula],
-                 coefficients: list[float]):
+                 coefficients: list[float] | list[str]):
         """
         Initialize an FSumProd object.
 
@@ -680,10 +715,17 @@ class FSumProd(Formula):
 
     @property
     def indicators(self):
-        indicator_set = set()
+        indicators = []
         for formula in self._formulae:
-            indicator_set = indicator_set.union(formula.indicators)
-        return list(indicator_set)
+            indicators.extend(formula.indicators if formula.indicators else [])
+        return indicators
+
+    @property
+    def weights(self):
+        weights = []
+        for formula in self._formulae:
+            weights.extend(formula._weights if formula._weights else [])
+        return weights
 
     @property
     def what(self):
@@ -752,7 +794,17 @@ class FMult(Formula):
 
     @property
     def indicators(self):
-        return list(set(self._formula1.indicators).union(self._formula2.indicators))
+        indicators = []
+        for formula in self._formulae:
+            indicators.extend(formula.indicators if formula.indicators else [])
+        return indicators
+
+    @property
+    def weights(self):
+        weights = []
+        for formula in self._formulae:
+            weights.extend(formula._weights if formula._weights else [])
+        return weights
 
     @property
     def what(self):
@@ -823,7 +875,17 @@ class FDiv(Formula):
 
     @property
     def indicators(self):
-        return list(set(self._formula1.indicators).union(self._formula2.indicators))
+        indicators = []
+        for formula in self._formulae:
+            indicators.extend(formula.indicators if formula.indicators else [])
+        return indicators
+
+    @property
+    def weights(self):
+        weights = []
+        for formula in self._formulae:
+            weights.extend(formula._weights if formula._weights else [])
+        return weights
 
     @property
     def what(self):
