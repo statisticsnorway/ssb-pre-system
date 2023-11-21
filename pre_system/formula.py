@@ -88,7 +88,7 @@ class Formula:
         for _, val in self.calls_on.items():
             val.info(i+1)
 
-    def trace_indicators_weights(self, trace=True):
+    def indicators_weights(self, trace=True):
         return None
 
     def evaluate(self,
@@ -227,7 +227,7 @@ class Indicator(Formula):
             f'{self._annual.lower()}*<date {self.baseyear}>*{fraction}'
         )
 
-    def trace_indicators_weights(self, trace=True):
+    def indicators_weights(self, trace=True):
         return [(x, y) for x, y in zip(self.indicators, self.weights)]
 
     def evaluate(self,
