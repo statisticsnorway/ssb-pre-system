@@ -403,7 +403,7 @@ class FDeflate(Formula):
     def indicators_weights(self, trace=True):
         return (
             [(x, y) for x, y in zip(self.indicators, self.weights)]
-            (+self._formula.indicators_weights(trace=trace) if trace else [])
+            +(self._formula.indicators_weights(trace=trace) if trace else [])
         )
 
     def evaluate(self,
@@ -541,7 +541,7 @@ class FInflate(Formula):
     def indicators_weights(self, trace=True):
         return (
             [(x, y) for x, y in zip(self.indicators, self.weights)]
-            (+self._formula.indicators_weights(trace=trace) if trace else [])
+            +(self._formula.indicators_weights(trace=trace) if trace else [])
         )
 
     def evaluate(self,
@@ -636,7 +636,7 @@ class FSum(Formula):
     def indicators_weights(self, trace=True):
         return (
             [(x, y) for x, y in zip(self.indicators, self.weights)]
-            (+self._formula.indicators_weights(trace=trace) if trace else [])
+            +([formula.indicators_weights(trace=trace) for formula in self._formulae] if trace else [])
         )
 
     def evaluate(self,
@@ -725,7 +725,7 @@ class FSumProd(Formula):
     def indicators_weights(self, trace=True):
         return (
             [(x, y) for x, y in zip(self.indicators, self.weights)]
-            (+self._formula.indicators_weights(trace=trace) if trace else [])
+            +(self._formula.indicators_weights(trace=trace) if trace else [])
         )
 
     def evaluate(self,
@@ -796,7 +796,7 @@ class FMult(Formula):
     def indicators_weights(self, trace=True):
         return (
             [(x, y) for x, y in zip(self.indicators, self.weights)]
-            (+self._formula.indicators_weights(trace=trace) if trace else [])
+            +(self._formula.indicators_weights(trace=trace) if trace else [])
         )
 
     def evaluate(self,
@@ -869,7 +869,7 @@ class FDiv(Formula):
     def indicators_weights(self, trace=True):
         return (
             [(x, y) for x, y in zip(self.indicators, self.weights)]
-            (+self._formula.indicators_weights(trace=trace) if trace else [])
+            +(self._formula.indicators_weights(trace=trace) if trace else [])
         )
 
     def evaluate(self,
@@ -970,7 +970,7 @@ class MultCorr(Formula):
     def indicators_weights(self, trace=True):
         return (
             [(x, y) for x, y in zip(self.indicators, self.weights)]
-            (+self._formula.indicators_weights(trace=trace) if trace else [])
+            +(self._formula.indicators_weights(trace=trace) if trace else [])
         )
 
     def evaluate(self,
@@ -1068,7 +1068,7 @@ class AddCorr(Formula):
     def indicators_weights(self, trace=True):
         return (
             [(x, y) for x, y in zip(self.indicators, self.weights)]
-            (+self._formula.indicators_weights(trace=trace) if trace else [])
+            +(self._formula.indicators_weights(trace=trace) if trace else [])
         )
 
     def evaluate(self,
@@ -1168,7 +1168,7 @@ class FJoin(Formula):
     def indicators_weights(self, trace=True):
         return (
             [(x, y) for x, y in zip(self.indicators, self.weights)]
-            (+self._formula.indicators_weights(trace=trace) if trace else [])
+            +(self._formula.indicators_weights(trace=trace) if trace else [])
         )
 
     def evaluate(self,
