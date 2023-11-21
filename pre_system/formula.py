@@ -48,11 +48,11 @@ class Formula:
 
     @property
     def indicators(self):
-        return None
+        return []
 
     @property
-    def weight(self):
-        return None
+    def weights(self):
+        return []
 
     @baseyear.setter
     def baseyear(self, baseyear):
@@ -87,6 +87,9 @@ class Formula:
         print(f'{" "*i}{self.name} = {what}')
         for _, val in self.calls_on.items():
             val.info(i+1)
+
+    def trace_indicators_weights(self, trace=True):
+        return None
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
@@ -199,7 +202,9 @@ class Indicator(Formula):
 
     @property
     def weights(self):
-        return self._weights
+        if self._weights:
+            return self._weights
+        return [1 for _ in self.indicators]
 
     @property
     def what(self):
@@ -221,6 +226,9 @@ class Indicator(Formula):
         return (
             f'{self._annual.lower()}*<date {self.baseyear}>*{fraction}'
         )
+
+    def trace_indicators_weights(self, trace=True):
+        return [(x, y) for x, y in zip(self.indicators, self.weights)]
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
@@ -363,17 +371,13 @@ class FDeflate(Formula):
 
     @property
     def indicators(self):
-        indicators = self._indicators
-        for formula in self._formulae:
-            indicators.extend(formula.indicators if formula.indicators else [])
-        return indicators
+        return self._indicators
 
     @property
     def weights(self):
-        weights = self._weights
-        for formula in self._formulae:
-            weights.extend(formula._weights if formula._weights else [])
-        return weights
+        if self._weights:
+            return self._weights
+        return [1 for _ in self.indicators]
 
     @property
     def what(self):
@@ -395,6 +399,14 @@ class FDeflate(Formula):
         return (
             f'sum({self._formula.name}<date {self.baseyear}>)*{fraction}'
         )
+
+    def indicators_weights(self, trace=True):
+        indicators = self.indicators
+        weights = self.weights
+        if trace:
+            indicators.extend(self.formula.indicators)
+            weights.extend(self.formula.weights)
+        return [(x, y) for x, y in zip(indicators, weights)]
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
@@ -499,17 +511,13 @@ class FInflate(Formula):
 
     @property
     def indicators(self):
-        indicators = self._indicators
-        for formula in self._formulae:
-            indicators.extend(formula.indicators if formula.indicators else [])
-        return indicators
+        return self._indicators
 
     @property
     def weights(self):
-        weights = self._weights
-        for formula in self._formulae:
-            weights.extend(formula._weights if formula._weights else [])
-        return weights
+        if self._weights:
+            return self._weights
+        return [1 for _ in self.indicators]
 
     @property
     def what(self):
@@ -531,6 +539,14 @@ class FInflate(Formula):
         return (
             f'sum({self._formula.name}<date {self.baseyear}>)*{fraction}'
         )
+
+    def indicators_weights(self, trace=True):
+        indicators = self.indicators
+        weights = self.weights
+        if trace:
+            indicators.extend(self.formula.indicators)
+            weights.extend(self.formula.weights)
+        return [(x, y) for x, y in zip(indicators, weights)]
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
@@ -618,22 +634,17 @@ class FSum(Formula):
         self._calls_on = {x.name: x for x in formulae}
 
     @property
-    def indicators(self):
-        indicators = []
-        for formula in self._formulae:
-            indicators.extend(formula.indicators if formula.indicators else [])
-        return indicators
-
-    @property
-    def weights(self):
-        weights = []
-        for formula in self._formulae:
-            weights.extend(formula._weights if formula._weights else [])
-        return weights
-
-    @property
     def what(self):
         return '+'.join([x.name for x in self._formulae])
+
+    def indicators_weights(self, trace=True):
+        indicators = self.indicators
+        weights = self.weights
+        if trace:
+            for formula in self._formulae:
+                indicators.extend(self.formula.indicators)
+                weights.extend(self.formula.weights)
+        return [(x, y) for x, y in zip(indicators, weights)]
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
@@ -714,23 +725,19 @@ class FSumProd(Formula):
         self._calls_on = {x.name: x for x in formulae}
 
     @property
-    def indicators(self):
-        indicators = []
-        for formula in self._formulae:
-            indicators.extend(formula.indicators if formula.indicators else [])
-        return indicators
-
-    @property
-    def weights(self):
-        weights = []
-        for formula in self._formulae:
-            weights.extend(formula._weights if formula._weights else [])
-        return weights
-
-    @property
     def what(self):
         return '+'.join(['*'.join([x.name, str(y)]) for x, y in
                          zip(self._formulae, self._coefficients)])
+
+    def indicators_weights(self, trace=True):
+        indicators = self.indicators
+        weights = self.weights
+        if trace:
+            for formula in self._formulae:
+                indicators.extend(self.formula.indicators)
+                weights.extend(self.formula.weights)
+        return [(x, y) for x, y in zip(indicators, weights)]
+
     def evaluate(self,
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
@@ -793,22 +800,17 @@ class FMult(Formula):
         self._calls_on = {formula1.name: formula1, formula2.name: formula2}
 
     @property
-    def indicators(self):
-        indicators = []
-        for formula in self._formulae:
-            indicators.extend(formula.indicators if formula.indicators else [])
-        return indicators
-
-    @property
-    def weights(self):
-        weights = []
-        for formula in self._formulae:
-            weights.extend(formula._weights if formula._weights else [])
-        return weights
-
-    @property
     def what(self):
         return f'{self._formula1.name}*{self._formula2.name}'
+
+    def indicators_weights(self, trace=True):
+        indicators = self.indicators
+        weights = self.weights
+        if trace:
+            for formula in [self._formula1, self._formula2]:
+                indicators.extend(self.formula.indicators)
+                weights.extend(self.formula.weights)
+        return [(x, y) for x, y in zip(indicators, weights)]
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
@@ -874,22 +876,17 @@ class FDiv(Formula):
         self._calls_on = {formula1.name: formula1, formula2.name: formula2}
 
     @property
-    def indicators(self):
-        indicators = []
-        for formula in self._formulae:
-            indicators.extend(formula.indicators if formula.indicators else [])
-        return indicators
-
-    @property
-    def weights(self):
-        weights = []
-        for formula in self._formulae:
-            weights.extend(formula._weights if formula._weights else [])
-        return weights
-
-    @property
     def what(self):
         return f'{self._formula1.name}/{self._formula2.name}'
+
+    def indicators_weights(self, trace=True):
+        indicators = self.indicators
+        weights = self.weights
+        if trace:
+            for formula in [self._formula1, self._formula2]:
+                indicators.extend(self.formula.indicators)
+                weights.extend(self.formula.weights)
+        return [(x, y) for x, y in zip(indicators, weights)]
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
