@@ -89,7 +89,7 @@ class Formula:
             val.info(i+1)
 
     def indicators_weights(self, trace=True):
-        return None
+        return []
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
