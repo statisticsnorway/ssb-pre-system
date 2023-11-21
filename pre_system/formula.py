@@ -724,10 +724,11 @@ class FSumProd(Formula):
                          zip(self._formulae, self._coefficients)])
 
     def indicators_weights(self, trace=True):
-        return (
-            [(x, y) for x, y in zip(self.indicators, self.weights)]
-            +(self._formula.indicators_weights(trace=trace) if trace else [])
-        )
+        indicators_weights = []
+        if trace:
+            for formula in self._formulae:
+                indicators_weights.extend(formula.indicators_weights(trace=trace))
+        return indicators_weights
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
@@ -795,10 +796,11 @@ class FMult(Formula):
         return f'{self._formula1.name}*{self._formula2.name}'
 
     def indicators_weights(self, trace=True):
-        return (
-            [(x, y) for x, y in zip(self.indicators, self.weights)]
-            +(self._formula.indicators_weights(trace=trace) if trace else [])
-        )
+        indicators_weights = []
+        if trace:
+            for formula in [self._formula1, self._formula2]:
+                indicators_weights.extend(formula.indicators_weights(trace=trace))
+        return indicators_weights
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
@@ -868,10 +870,11 @@ class FDiv(Formula):
         return f'{self._formula1.name}/{self._formula2.name}'
 
     def indicators_weights(self, trace=True):
-        return (
-            [(x, y) for x, y in zip(self.indicators, self.weights)]
-            +(self._formula.indicators_weights(trace=trace) if trace else [])
-        )
+        indicators_weights = []
+        if trace:
+            for formula in [self._formula1, self._formula2]:
+                indicators_weights.extend(formula.indicators_weights(trace=trace))
+        return indicators_weights
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
@@ -969,10 +972,7 @@ class MultCorr(Formula):
         )
 
     def indicators_weights(self, trace=True):
-        return (
-            [(x, y) for x, y in zip(self.indicators, self.weights)]
-            +(self._formula.indicators_weights(trace=trace) if trace else [])
-        )
+        return self._formula.indicators_weights(trace=trace) if trace else []
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
@@ -1067,10 +1067,7 @@ class AddCorr(Formula):
         return f'{self._correction_name}+({self._formula.what})-avg({self._correction_name}<date {self.baseyear})'
 
     def indicators_weights(self, trace=True):
-        return (
-            [(x, y) for x, y in zip(self.indicators, self.weights)]
-            +(self._formula.indicators_weights(trace=trace) if trace else [])
-        )
+        return self._formula.indicators_weights(trace=trace) if trace else []
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
@@ -1167,10 +1164,11 @@ class FJoin(Formula):
         return f'{self._formula1.name} if year>={self._from_year} else {self._formula2.name}'
 
     def indicators_weights(self, trace=True):
-        return (
-            [(x, y) for x, y in zip(self.indicators, self.weights)]
-            +(self._formula.indicators_weights(trace=trace) if trace else [])
-        )
+        indicators_weights = []
+        if trace:
+            for formula in [self._formula1, self._formula2]:
+                indicators_weights.extend(formula.indicators_weights(trace=trace))
+        return indicators_weights
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
