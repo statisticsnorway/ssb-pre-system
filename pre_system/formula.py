@@ -634,10 +634,11 @@ class FSum(Formula):
         return '+'.join([x.name for x in self._formulae])
 
     def indicators_weights(self, trace=True):
-        return (
-            [(x, y) for x, y in zip(self.indicators, self.weights)]
-            +([formula.indicators_weights(trace=trace) for formula in self._formulae] if trace else [])
-        )
+        indicators_weights = []
+        if trace:
+            for formula in self._formulae:
+                indicators_weights.extend(formula.indicators_weights(trace=trace))
+        return indicators_weights
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
