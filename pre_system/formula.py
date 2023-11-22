@@ -24,6 +24,7 @@ class Formula:
         TypeError
             If `name` is not a string.
         """
+
         if isinstance(name, str) is False:
             raise TypeError('name must be str')
         self._name = name.lower()
@@ -121,6 +122,7 @@ class Formula:
         IndexError
             If the base year is out of range for any input DataFrame.
         """
+
         if self.baseyear is None:
             raise ValueError('baseyear is None')
 
@@ -133,10 +135,9 @@ class Formula:
         if correction_df is not None:
             self._check_df('correction_df', correction_df, self.baseyear, indicators_df.index.freq)
 
+    # Method that checks that conditions are met for DataFrame to be valid input
     @staticmethod
     def _check_df(df_name, df, baseyear, frequency=None):
-        """
-        """
         if isinstance(df, pd.DataFrame) is False:
             raise TypeError(f'{df_name} must be a Pandas.DataFrame')
         if isinstance(df.index, pd.PeriodIndex) is False:
@@ -178,6 +179,7 @@ class Indicator(Formula):
         IndexError
             If `weight_names` is provided and has a different length than `indicator_names`.
         """
+
         super().__init__(name)
         if isinstance(annual, str) is False:
             raise TypeError('annual must be str')
@@ -267,6 +269,7 @@ class Indicator(Formula):
         pd.Series
             The evaluated series.
         """
+
         super().evaluate(annual_df,
                          indicators_df,
                          weights_df,
@@ -358,6 +361,7 @@ class FDeflate(Formula):
         IndexError
             If `weight_names` is provided and has a different length than `indicator_names`.
         """
+
         super().__init__(name)
         if isinstance(formula, Formula) is False:
             raise TypeError('formula must be of type Formula')
@@ -496,6 +500,7 @@ class FInflate(Formula):
         IndexError
             If `weight_names` is provided and has a different length than `indicator_names`.
         """
+
         super().__init__(name)
         if isinstance(formula, Formula) is False:
             raise TypeError('formula must be of type Formula')
@@ -623,6 +628,7 @@ class FSum(Formula):
         TypeError
             If any of the *formulae is not of type Formula.
         """
+
         super().__init__(name)
         if all(isinstance(x, Formula) for x in formulae) is False:
             raise TypeError('*formulae must be of type Formula')
@@ -677,6 +683,7 @@ class FSum(Formula):
         pd.Series
             The evaluated series.
         """
+
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
@@ -711,6 +718,7 @@ class FSumProd(Formula):
         TypeError
             If any of the *formulae is not of type Formula.
         """
+
         super().__init__(name)
         if all(isinstance(x, Formula) for x in formulae) is False:
             raise TypeError('*formulae must be of type Formula')
@@ -767,6 +775,7 @@ class FSumProd(Formula):
         pd.Series
             The evaluated series.
         """
+
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
@@ -839,6 +848,7 @@ class FMult(Formula):
         pd.Series
             The evaluated series.
         """
+
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
@@ -913,6 +923,7 @@ class FDiv(Formula):
         pd.Series
             The evaluated series.
         """
+
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
@@ -944,12 +955,25 @@ class MultCorr(Formula):
         TypeError
             If formula is not of type Formula.
         """
+
         super().__init__(formula.name)
         if isinstance(formula, Formula) is False:
             raise TypeError('formula must be of type Formula')
         self._formula = formula
         self._correction_name = correction_name
         self._calls_on = formula._calls_on
+
+    @property
+    def baseyear(self):
+        return self._baseyear
+
+    @baseyear.setter
+    def baseyear(self, baseyear):
+        if isinstance(baseyear, int) is False:
+            raise TypeError('baseyear must be int')
+        self._baseyear = baseyear
+        # Pass baseyear to formula that goes into correction
+        self._formula.baseyear = baseyear
 
     @property
     def what(self):
@@ -999,6 +1023,7 @@ class MultCorr(Formula):
         pd.Series
             The evaluated series.
         """
+
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
@@ -1031,6 +1056,7 @@ class AddCorr(Formula):
         TypeError
             If formula is not of type Formula.
         """
+
         super().__init__(formula.name)
         if isinstance(formula, Formula) is False:
             raise TypeError('formula must be of type Formula')
@@ -1047,7 +1073,7 @@ class AddCorr(Formula):
         if isinstance(baseyear, int) is False:
             raise TypeError('baseyear must be int')
         self._baseyear = baseyear
-        # Passign baseyear onto formula that goes into correction
+        # Pass baseyear to formula that goes into correction
         self._formula.baseyear = baseyear
 
     @property
@@ -1094,6 +1120,7 @@ class AddCorr(Formula):
         pd.Series
             The evaluated series.
         """
+
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
@@ -1133,6 +1160,7 @@ class FJoin(Formula):
         TypeError
             If from year is not of type str.
         """
+
         super().__init__(name)
         if isinstance(formula1, Formula) and isinstance(formula1, Formula) is False:
             raise TypeError('formula1 and formula2 must be of type Formula')
@@ -1195,6 +1223,7 @@ class FJoin(Formula):
         pd.Series
             The evaluated series.
         """
+
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
