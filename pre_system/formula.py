@@ -952,18 +952,6 @@ class MultCorr(Formula):
         self._calls_on = formula._calls_on
 
     @property
-    def baseyear(self):
-        return self._baseyear
-
-    @baseyear.setter
-    def baseyear(self, baseyear):
-        if isinstance(baseyear, int) is False:
-            raise TypeError('baseyear must be int')
-        self._baseyear = baseyear
-        # Passign baseyear onto formula that goes into correction
-        self._formula.baseyear = baseyear
-
-    @property
     def what(self):
         return (
             f'sum(({self._formula.what})<date {self.baseyear}>)*'
@@ -1019,8 +1007,8 @@ class MultCorr(Formula):
         formula_corrected = evaluated_formula*correction_df[self._correction_name]
 
         return (
-            evaluated_formula[evaluated_formula.index.year == self.baseyear].sum()*
-            formula_corrected.div(
+            evaluated_formula[evaluated_formula.index.year == self.baseyear].sum()
+            *formula_corrected.div(
                 formula_corrected[formula_corrected.index.year == self.baseyear].sum()
             )
         )
