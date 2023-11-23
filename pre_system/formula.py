@@ -394,14 +394,20 @@ class FDeflate(Formula):
     @property
     def what(self):
         correction = f'{self._correction}*' if self._correction else ''
+
+        if self._normalise:
+            indicators = [f'{x}/sum({x}<date {self.baseyear}>)' for x in self._indicators]
+        else:
+            indicators = self._indicators
+
         if self._weights:
             aggregated_indicators = (
                 '+'.join(['*'.join([str(x).lower(), y.lower()]) for x, y in
-                          zip(self._weights, self._indicators)])
+                          zip(self._weights, indicators)])
             )
         else:
             aggregated_indicators = (
-                '+'.join([x.lower() for x in self._indicators])
+                '+'.join([x.lower() for x in indicators])
             )
 
         numerator = f'{correction}{self._formula.name}/({aggregated_indicators})'
@@ -533,14 +539,20 @@ class FInflate(Formula):
     @property
     def what(self):
         correction = f'{self._correction}*' if self._correction else ''
+
+        if self._normalise:
+            indicators = [f'{x}/sum({x}<date {self.baseyear}>)' for x in self._indicators]
+        else:
+            indicators = self._indicators
+
         if self._weights:
             aggregated_indicators = (
                 '+'.join(['*'.join([str(x).lower(), y.lower()]) for x, y in
-                          zip(self._weights, self._indicators)])
+                          zip(self._weights, indicators)])
             )
         else:
             aggregated_indicators = (
-                '+'.join([x.lower() for x in self._indicators])
+                '+'.join([x.lower() for x in indicators])
             )
 
         numerator = f'{correction}{self._formula.name}*({aggregated_indicators})'
