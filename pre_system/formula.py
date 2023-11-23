@@ -157,6 +157,7 @@ class Indicator(Formula):
                  indicators: list[str],
                  weights: list[str | float] = None,
                  correction: str = None,
+                 normalise=False,
                  aggregation: str = 'sum'):
         """
         Initialize an Indicator object.
@@ -193,6 +194,7 @@ class Indicator(Formula):
         self._indicators = [x.strip() for x in indicators]
         self._weights = weights
         self._correction = correction
+        self._normalise = normalise
         if aggregation.lower() not in ['sum', 'avg']:
             raise NameError('aggregation must be sum or avg')
         self._aggregation = aggregation.lower()
@@ -211,14 +213,20 @@ class Indicator(Formula):
     @property
     def what(self):
         correction = f'{self._correction}*' if self._correction else ''
+
+        if self._normalise:
+            indicators = [f'{x}/sum({x}<date {self.baseyear}>)' for x in self._indicators]
+        else:
+            indicators = self._indicators
+
         if self._weights:
             aggregated_indicators = (
                 '+'.join(['*'.join([str(x).lower(), y.lower()]) for x, y in
-                          zip(self._weights, self._indicators)])
+                          zip(self._weights, indicators)])
             )
         else:
             aggregated_indicators = (
-                '+'.join([x.lower() for x in self._indicators])
+                '+'.join([x.lower() for x in indicators])
             )
 
         numerator = f'{correction}({aggregated_indicators})'
