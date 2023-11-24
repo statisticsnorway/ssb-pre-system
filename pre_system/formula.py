@@ -290,6 +290,16 @@ class Indicator(Formula):
             missing = [x for x in self._indicators if x not in indicators_df.columns]
             raise NameError(f'Cannot find {",".join(missing)} in indicators_df')
 
+        indicator_matrix = indicators_df[self._indicators]
+        if self._normalise:
+            indicator_matrix = (
+                indicator_matrix.div(
+                    indicator_matrix[
+                        indicator_matrix.index.year == self.baseyear
+                    ].sum()
+                )
+            )
+
         if self._weights:
             if all(isinstance(x, str) for x in self._weights):
                 if weights_df is None:
@@ -298,7 +308,8 @@ class Indicator(Formula):
                     missing = [x for x in self._weights if x not in weights_df.columns]
                     raise NameError(f'Cannot find {",".join(missing)} in weights_df')
 
-            indicator_matrix = indicators_df[self._indicators].to_numpy()
+            indicator_matrix = indicator_matrix.to_numpy()
+
             if all(isinstance(x, str) for x in self._weights):
                 weight_vector = (
                     weights_df[weights_df.index.year == self.baseyear][self._weights]
@@ -312,7 +323,7 @@ class Indicator(Formula):
                 index=indicators_df.index
             )
         else:
-            weighted_indicators = indicators_df[self._indicators].sum(axis=1, skipna=False)
+            weighted_indicators = weighted_indicators.sum(axis=1, skipna=False)
 
         if self._correction:
             if correction_df is None:
