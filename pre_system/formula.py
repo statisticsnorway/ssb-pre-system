@@ -96,7 +96,8 @@ class Formula:
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None):
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the formula using the provided data.
 
@@ -244,7 +245,8 @@ class Indicator(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
 
@@ -356,7 +358,8 @@ class FDeflate(Formula):
                  formula: Formula,
                  indicators: list[str],
                  weights: list[str | float] = None,
-                 correction: str = None):
+                 correction: str = None,
+                 normalise=False):
         """
         Initialize an FDeflate object.
 
@@ -439,7 +442,8 @@ class FDeflate(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
@@ -501,7 +505,8 @@ class FInflate(Formula):
                  formula: Formula,
                  indicators: list[str],
                  weights: list[str | float] = None,
-                 correction: str = None):
+                 correction: str = None,
+                 normalise=False):
         """
         Initialize an FInflate object.
 
@@ -584,7 +589,8 @@ class FInflate(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
@@ -681,7 +687,8 @@ class FSum(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
 
@@ -773,7 +780,8 @@ class FSumProd(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
 
@@ -846,7 +854,8 @@ class FMult(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
 
@@ -921,7 +930,8 @@ class FDiv(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
 
@@ -1021,7 +1031,8 @@ class MultCorr(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
 
@@ -1118,7 +1129,8 @@ class AddCorr(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
 
@@ -1221,7 +1233,8 @@ class FJoin(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
 
