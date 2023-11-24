@@ -393,6 +393,7 @@ class FDeflate(Formula):
         self._indicators = [x.strip() for x in indicators]
         self._weights = weights
         self._correction = correction
+        self._normalise = normalise
         self._calls_on = {formula.name: formula}
 
     @property
@@ -540,6 +541,7 @@ class FInflate(Formula):
         self._indicators = [x.strip() for x in indicators]
         self._weights = weights
         self._correction = correction
+        self._normalise = normalise
         self._calls_on = {formula.name: formula}
 
     @property
