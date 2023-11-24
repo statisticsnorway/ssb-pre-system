@@ -325,7 +325,7 @@ class Indicator(Formula):
                 index=indicators_df.index
             )
         else:
-            weighted_indicators = weighted_indicators.sum(axis=1, skipna=False)
+            weighted_indicators = indicator_matrix.sum(axis=1, skipna=False)
 
         if self._correction:
             if correction_df is None:
