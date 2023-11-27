@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nr-forsystem"
-version = "0.1.0"
+version = "0.4.0"
 description = "Forsystem for månedlige og kvartalsevise NR-statistikker"
 authors = ["Magnus Kvåle Helliesen <magnus.helliesen@gmail.com>"]
 license = "MIT"
