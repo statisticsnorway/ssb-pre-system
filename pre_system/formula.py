@@ -24,6 +24,7 @@ class Formula:
         TypeError
             If `name` is not a string.
         """
+
         if isinstance(name, str) is False:
             raise TypeError('name must be str')
         self._name = name.lower()
@@ -48,7 +49,11 @@ class Formula:
 
     @property
     def indicators(self):
-        return None
+        return []
+
+    @property
+    def weights(self):
+        return []
 
     @baseyear.setter
     def baseyear(self, baseyear):
@@ -84,11 +89,15 @@ class Formula:
         for _, val in self.calls_on.items():
             val.info(i+1)
 
+    def indicators_weights(self, trace=True):
+        return []
+
     def evaluate(self,
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None):
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the formula using the provided data.
 
@@ -114,6 +123,7 @@ class Formula:
         IndexError
             If the base year is out of range for any input DataFrame.
         """
+
         if self.baseyear is None:
             raise ValueError('baseyear is None')
 
@@ -126,10 +136,9 @@ class Formula:
         if correction_df is not None:
             self._check_df('correction_df', correction_df, self.baseyear, indicators_df.index.freq)
 
+    # Method that checks that conditions are met for DataFrame to be valid input
     @staticmethod
     def _check_df(df_name, df, baseyear, frequency=None):
-        """
-        """
         if isinstance(df, pd.DataFrame) is False:
             raise TypeError(f'{df_name} must be a Pandas.DataFrame')
         if isinstance(df.index, pd.PeriodIndex) is False:
@@ -149,6 +158,7 @@ class Indicator(Formula):
                  indicators: list[str],
                  weights: list[str | float] = None,
                  correction: str = None,
+                 normalise=False,
                  aggregation: str = 'sum'):
         """
         Initialize an Indicator object.
@@ -171,6 +181,7 @@ class Indicator(Formula):
         IndexError
             If `weight_names` is provided and has a different length than `indicator_names`.
         """
+
         super().__init__(name)
         if isinstance(annual, str) is False:
             raise TypeError('annual must be str')
@@ -184,6 +195,7 @@ class Indicator(Formula):
         self._indicators = [x.strip() for x in indicators]
         self._weights = weights
         self._correction = correction
+        self._normalise = normalise
         if aggregation.lower() not in ['sum', 'avg']:
             raise NameError('aggregation must be sum or avg')
         self._aggregation = aggregation.lower()
@@ -194,16 +206,28 @@ class Indicator(Formula):
         return self._indicators
 
     @property
+    def weights(self):
+        if self._weights:
+            return self._weights
+        return [1 for _ in self.indicators]
+
+    @property
     def what(self):
         correction = f'{self._correction}*' if self._correction else ''
+
+        if self._normalise:
+            indicators = [f'{x}/sum({x}<date {self.baseyear}>)' for x in self._indicators]
+        else:
+            indicators = self._indicators
+
         if self._weights:
             aggregated_indicators = (
                 '+'.join(['*'.join([str(x).lower(), y.lower()]) for x, y in
-                          zip(self._weights, self._indicators)])
+                          zip(self._weights, indicators)])
             )
         else:
             aggregated_indicators = (
-                '+'.join([x.lower() for x in self._indicators])
+                '+'.join([x.lower() for x in indicators])
             )
 
         numerator = f'{correction}({aggregated_indicators})'
@@ -214,11 +238,15 @@ class Indicator(Formula):
             f'{self._annual.lower()}*<date {self.baseyear}>*{fraction}'
         )
 
+    def indicators_weights(self, trace=True):
+        return [(x, y) for x, y in zip(self.indicators, self.weights)]
+
     def evaluate(self,
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
 
@@ -251,6 +279,7 @@ class Indicator(Formula):
         pd.Series
             The evaluated series.
         """
+
         super().evaluate(annual_df,
                          indicators_df,
                          weights_df,
@@ -263,6 +292,16 @@ class Indicator(Formula):
             missing = [x for x in self._indicators if x not in indicators_df.columns]
             raise NameError(f'Cannot find {",".join(missing)} in indicators_df')
 
+        indicator_matrix = indicators_df[self._indicators]
+        if self._normalise:
+            indicator_matrix = (
+                indicator_matrix.div(
+                    indicator_matrix[
+                        indicator_matrix.index.year == self.baseyear
+                    ].sum()
+                )
+            )
+
         if self._weights:
             if all(isinstance(x, str) for x in self._weights):
                 if weights_df is None:
@@ -271,7 +310,8 @@ class Indicator(Formula):
                     missing = [x for x in self._weights if x not in weights_df.columns]
                     raise NameError(f'Cannot find {",".join(missing)} in weights_df')
 
-            indicator_matrix = indicators_df[self._indicators].to_numpy()
+            indicator_matrix = indicator_matrix.to_numpy()
+
             if all(isinstance(x, str) for x in self._weights):
                 weight_vector = (
                     weights_df[weights_df.index.year == self.baseyear][self._weights]
@@ -285,7 +325,7 @@ class Indicator(Formula):
                 index=indicators_df.index
             )
         else:
-            weighted_indicators = indicators_df[self._indicators].sum(axis=1, skipna=False)
+            weighted_indicators = indicator_matrix.sum(axis=1, skipna=False)
 
         if self._correction:
             if correction_df is None:
@@ -318,7 +358,8 @@ class FDeflate(Formula):
                  formula: Formula,
                  indicators: list[str],
                  weights: list[str | float] = None,
-                 correction: str = None):
+                 correction: str = None,
+                 normalise=False):
         """
         Initialize an FDeflate object.
 
@@ -342,6 +383,7 @@ class FDeflate(Formula):
         IndexError
             If `weight_names` is provided and has a different length than `indicator_names`.
         """
+
         super().__init__(name)
         if isinstance(formula, Formula) is False:
             raise TypeError('formula must be of type Formula')
@@ -351,23 +393,36 @@ class FDeflate(Formula):
         self._indicators = [x.strip() for x in indicators]
         self._weights = weights
         self._correction = correction
+        self._normalise = normalise
         self._calls_on = {formula.name: formula}
 
     @property
     def indicators(self):
-        return list(set(self._indicators).union(self._formula.indicators))
+        return self._indicators
+
+    @property
+    def weights(self):
+        if self._weights:
+            return self._weights
+        return [1 for _ in self.indicators]
 
     @property
     def what(self):
         correction = f'{self._correction}*' if self._correction else ''
+
+        if self._normalise:
+            indicators = [f'{x}/sum({x}<date {self.baseyear}>)' for x in self._indicators]
+        else:
+            indicators = self._indicators
+
         if self._weights:
             aggregated_indicators = (
                 '+'.join(['*'.join([str(x).lower(), y.lower()]) for x, y in
-                          zip(self._weights, self._indicators)])
+                          zip(self._weights, indicators)])
             )
         else:
             aggregated_indicators = (
-                '+'.join([x.lower() for x in self._indicators])
+                '+'.join([x.lower() for x in indicators])
             )
 
         numerator = f'{correction}{self._formula.name}/({aggregated_indicators})'
@@ -378,16 +433,33 @@ class FDeflate(Formula):
             f'sum({self._formula.name}<date {self.baseyear}>)*{fraction}'
         )
 
+    def indicators_weights(self, trace=True):
+        return (
+            [(x, y) for x, y in zip(self.indicators, self.weights)]
+            +(self._formula.indicators_weights(trace=trace) if trace else [])
+        )
+
     def evaluate(self,
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
         if all(x in indicators_df.columns for x in self._indicators) is False:
             raise NameError(f'All of {",".join(self._indicators)} is not in indicators_df')
+
+        indicator_matrix = indicators_df[self._indicators]
+        if self._normalise:
+            indicator_matrix = (
+                indicator_matrix.div(
+                    indicator_matrix[
+                        indicator_matrix.index.year == self.baseyear
+                    ].sum()
+                )
+            )
 
         if self._weights:
             if all(isinstance(x, str) for x in self._weights):
@@ -397,7 +469,8 @@ class FDeflate(Formula):
                     missing = [x for x in self._weights if x not in weights_df.columns]
                     raise NameError(f'Cannot find {",".join(missing)} in weights_df')
 
-            indicator_matrix = indicators_df[self._indicators].to_numpy()
+            indicator_matrix = indicator_matrix.to_numpy()
+
             if all(isinstance(x, str) for x in self._weights):
                 weight_vector = (
                     weights_df[weights_df.index.year == self.baseyear][self._weights]
@@ -411,7 +484,7 @@ class FDeflate(Formula):
                 index=indicators_df.index
             )
         else:
-            weighted_indicators = indicators_df[self._indicators].sum(axis=1, skipna=False)
+            weighted_indicators = indicator_matrix.sum(axis=1, skipna=False)
 
         evaluated_formula = self._formula.evaluate(*all_dfs)
 
@@ -444,7 +517,8 @@ class FInflate(Formula):
                  formula: Formula,
                  indicators: list[str],
                  weights: list[str | float] = None,
-                 correction: str = None):
+                 correction: str = None,
+                 normalise=False):
         """
         Initialize an FInflate object.
 
@@ -468,6 +542,7 @@ class FInflate(Formula):
         IndexError
             If `weight_names` is provided and has a different length than `indicator_names`.
         """
+
         super().__init__(name)
         if isinstance(formula, Formula) is False:
             raise TypeError('formula must be of type Formula')
@@ -477,23 +552,36 @@ class FInflate(Formula):
         self._indicators = [x.strip() for x in indicators]
         self._weights = weights
         self._correction = correction
+        self._normalise = normalise
         self._calls_on = {formula.name: formula}
 
     @property
     def indicators(self):
-        return list(set(self._indicators).union(self._formula.indicators))
+        return self._indicators
+
+    @property
+    def weights(self):
+        if self._weights:
+            return self._weights
+        return [1 for _ in self.indicators]
 
     @property
     def what(self):
         correction = f'{self._correction}*' if self._correction else ''
+
+        if self._normalise:
+            indicators = [f'{x}/sum({x}<date {self.baseyear}>)' for x in self._indicators]
+        else:
+            indicators = self._indicators
+
         if self._weights:
             aggregated_indicators = (
                 '+'.join(['*'.join([str(x).lower(), y.lower()]) for x, y in
-                          zip(self._weights, self._indicators)])
+                          zip(self._weights, indicators)])
             )
         else:
             aggregated_indicators = (
-                '+'.join([x.lower() for x in self._indicators])
+                '+'.join([x.lower() for x in indicators])
             )
 
         numerator = f'{correction}{self._formula.name}*({aggregated_indicators})'
@@ -504,16 +592,33 @@ class FInflate(Formula):
             f'sum({self._formula.name}<date {self.baseyear}>)*{fraction}'
         )
 
+    def indicators_weights(self, trace=True):
+        return (
+            [(x, y) for x, y in zip(self.indicators, self.weights)]
+            +(self._formula.indicators_weights(trace=trace) if trace else [])
+        )
+
     def evaluate(self,
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
         if all(x in indicators_df.columns for x in self._indicators) is False:
             raise NameError(f'All of {",".join(self._indicators)} is not in indicators_df')
+
+        indicator_matrix = indicators_df[self._indicators]
+        if self._normalise:
+            indicator_matrix = (
+                indicator_matrix.div(
+                    indicator_matrix[
+                        indicator_matrix.index.year == self.baseyear
+                    ].sum()
+                )
+            )
 
         if self._weights:
             if all(isinstance(x, str) for x in self._weights):
@@ -523,7 +628,8 @@ class FInflate(Formula):
                     missing = [x for x in self._weights if x not in weights_df.columns]
                     raise NameError(f'Cannot find {",".join(missing)} in weights_df')
 
-            indicator_matrix = indicators_df[self._indicators].to_numpy()
+            indicator_matrix = indicator_matrix.to_numpy()
+
             if all(isinstance(x, str) for x in self._weights):
                 weight_vector = (
                     weights_df[weights_df.index.year == self.baseyear][self._weights]
@@ -537,7 +643,7 @@ class FInflate(Formula):
                 index=indicators_df.index
             )
         else:
-            weighted_indicators = indicators_df[self._indicators].sum(axis=1, skipna=False)
+            weighted_indicators = indicator_matrix.sum(axis=1, skipna=False)
 
         evaluated_formula = self._formula.evaluate(*all_dfs)
 
@@ -583,6 +689,7 @@ class FSum(Formula):
         TypeError
             If any of the *formulae is not of type Formula.
         """
+
         super().__init__(name)
         if all(isinstance(x, Formula) for x in formulae) is False:
             raise TypeError('*formulae must be of type Formula')
@@ -590,21 +697,22 @@ class FSum(Formula):
         self._calls_on = {x.name: x for x in formulae}
 
     @property
-    def indicators(self):
-        indicator_set = set()
-        for formula in self._formulae:
-            indicator_set = indicator_set.union(formula.indicators)
-        return list(indicator_set)
-
-    @property
     def what(self):
         return '+'.join([x.name for x in self._formulae])
+
+    def indicators_weights(self, trace=True):
+        indicators_weights = []
+        if trace:
+            for formula in self._formulae:
+                indicators_weights.extend(formula.indicators_weights(trace=trace))
+        return indicators_weights
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
 
@@ -637,6 +745,7 @@ class FSum(Formula):
         pd.Series
             The evaluated series.
         """
+
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
@@ -653,7 +762,7 @@ class FSumProd(Formula):
     def __init__(self,
                  name,
                  formulae: list[Formula],
-                 coefficients: list[float]):
+                 coefficients: list[float] | list[str]):
         """
         Initialize an FSumProd object.
 
@@ -671,6 +780,7 @@ class FSumProd(Formula):
         TypeError
             If any of the *formulae is not of type Formula.
         """
+
         super().__init__(name)
         if all(isinstance(x, Formula) for x in formulae) is False:
             raise TypeError('*formulae must be of type Formula')
@@ -679,21 +789,23 @@ class FSumProd(Formula):
         self._calls_on = {x.name: x for x in formulae}
 
     @property
-    def indicators(self):
-        indicator_set = set()
-        for formula in self._formulae:
-            indicator_set = indicator_set.union(formula.indicators)
-        return list(indicator_set)
-
-    @property
     def what(self):
         return '+'.join(['*'.join([x.name, str(y)]) for x, y in
                          zip(self._formulae, self._coefficients)])
+
+    def indicators_weights(self, trace=True):
+        indicators_weights = []
+        if trace:
+            for formula in self._formulae:
+                indicators_weights.extend(formula.indicators_weights(trace=trace))
+        return indicators_weights
+
     def evaluate(self,
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
 
@@ -726,6 +838,7 @@ class FSumProd(Formula):
         pd.Series
             The evaluated series.
         """
+
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
@@ -751,18 +864,22 @@ class FMult(Formula):
         self._calls_on = {formula1.name: formula1, formula2.name: formula2}
 
     @property
-    def indicators(self):
-        return list(set(self._formula1.indicators).union(self._formula2.indicators))
-
-    @property
     def what(self):
         return f'{self._formula1.name}*{self._formula2.name}'
+
+    def indicators_weights(self, trace=True):
+        indicators_weights = []
+        if trace:
+            for formula in [self._formula1, self._formula2]:
+                indicators_weights.extend(formula.indicators_weights(trace=trace))
+        return indicators_weights
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
 
@@ -795,6 +912,7 @@ class FMult(Formula):
         pd.Series
             The evaluated series.
         """
+
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
@@ -822,18 +940,22 @@ class FDiv(Formula):
         self._calls_on = {formula1.name: formula1, formula2.name: formula2}
 
     @property
-    def indicators(self):
-        return list(set(self._formula1.indicators).union(self._formula2.indicators))
-
-    @property
     def what(self):
         return f'{self._formula1.name}/{self._formula2.name}'
+
+    def indicators_weights(self, trace=True):
+        indicators_weights = []
+        if trace:
+            for formula in [self._formula1, self._formula2]:
+                indicators_weights.extend(formula.indicators_weights(trace=trace))
+        return indicators_weights
 
     def evaluate(self,
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
 
@@ -866,6 +988,7 @@ class FDiv(Formula):
         pd.Series
             The evaluated series.
         """
+
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
@@ -897,6 +1020,7 @@ class MultCorr(Formula):
         TypeError
             If formula is not of type Formula.
         """
+
         super().__init__(formula.name)
         if isinstance(formula, Formula) is False:
             raise TypeError('formula must be of type Formula')
@@ -913,7 +1037,7 @@ class MultCorr(Formula):
         if isinstance(baseyear, int) is False:
             raise TypeError('baseyear must be int')
         self._baseyear = baseyear
-        # Passign baseyear onto formula that goes into correction
+        # Pass baseyear to formula that goes into correction
         self._formula.baseyear = baseyear
 
     @property
@@ -924,11 +1048,15 @@ class MultCorr(Formula):
             f'sum({self._correction_name}*({self._formula.what})<date {self.baseyear}>)'
         )
 
+    def indicators_weights(self, trace=True):
+        return self._formula.indicators_weights(trace=trace) if trace else []
+
     def evaluate(self,
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
 
@@ -961,6 +1089,7 @@ class MultCorr(Formula):
         pd.Series
             The evaluated series.
         """
+
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
@@ -969,8 +1098,8 @@ class MultCorr(Formula):
         formula_corrected = evaluated_formula*correction_df[self._correction_name]
 
         return (
-            evaluated_formula[evaluated_formula.index.year == self.baseyear].sum()*
-            formula_corrected.div(
+            evaluated_formula[evaluated_formula.index.year == self.baseyear].sum()
+            *formula_corrected.div(
                 formula_corrected[formula_corrected.index.year == self.baseyear].sum()
             )
         )
@@ -993,6 +1122,7 @@ class AddCorr(Formula):
         TypeError
             If formula is not of type Formula.
         """
+
         super().__init__(formula.name)
         if isinstance(formula, Formula) is False:
             raise TypeError('formula must be of type Formula')
@@ -1009,18 +1139,22 @@ class AddCorr(Formula):
         if isinstance(baseyear, int) is False:
             raise TypeError('baseyear must be int')
         self._baseyear = baseyear
-        # Passign baseyear onto formula that goes into correction
+        # Pass baseyear to formula that goes into correction
         self._formula.baseyear = baseyear
 
     @property
     def what(self):
         return f'{self._correction_name}+({self._formula.what})-avg({self._correction_name}<date {self.baseyear})'
 
+    def indicators_weights(self, trace=True):
+        return self._formula.indicators_weights(trace=trace) if trace else []
+
     def evaluate(self,
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
 
@@ -1053,6 +1187,7 @@ class AddCorr(Formula):
         pd.Series
             The evaluated series.
         """
+
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
@@ -1092,6 +1227,7 @@ class FJoin(Formula):
         TypeError
             If from year is not of type str.
         """
+
         super().__init__(name)
         if isinstance(formula1, Formula) and isinstance(formula1, Formula) is False:
             raise TypeError('formula1 and formula2 must be of type Formula')
@@ -1110,11 +1246,19 @@ class FJoin(Formula):
     def what(self):
         return f'{self._formula1.name} if year>={self._from_year} else {self._formula2.name}'
 
+    def indicators_weights(self, trace=True):
+        indicators_weights = []
+        if trace:
+            for formula in [self._formula1, self._formula2]:
+                indicators_weights.extend(formula.indicators_weights(trace=trace))
+        return indicators_weights
+
     def evaluate(self,
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None) -> pd.Series:
+                 correction_df: pd.DataFrame = None
+                ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
 
@@ -1147,6 +1291,7 @@ class FJoin(Formula):
         pd.Series
             The evaluated series.
         """
+
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
 
