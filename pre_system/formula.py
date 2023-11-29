@@ -790,7 +790,7 @@ class FSumProd(Formula):
 
     @property
     def what(self):
-        return '+'.join(['*'.join([x.name, str(y)]) for x, y in
+        return '+'.join(['*'.join([x.name, str(y).lower()]) for x, y in
                          zip(self._formulae, self._coefficients)])
 
     def indicators_weights(self, trace=True):
