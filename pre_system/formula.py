@@ -846,7 +846,18 @@ class FSumProd(Formula):
             raise ValueError('some of the formulae do not evaluate')
 
         if all(isinstance(x, str) for x in self._weights):
-            return
+            if weights_df is None:
+                raise NameError(f'{self.name} expects weights_df')
+            if all(x in weights_df.columns for x in self._weights) is False:
+                missing = [x for x in self._weights if x not in weights_df.columns]
+                raise NameError(f'Cannot find {",".join(missing)} in weights_df')
+            weight_vector = (
+                weights_df[weights_df.index.year == self.baseyear][self._weights].sum().tolist()
+            )
+            return sum(
+                x.evaluate(*all_dfs)*y
+                for x, y in zip(self._formulae, weight_vector)
+            )
         if all(isinstance(x, float) for x in self._weights):
             return sum(
                 x.evaluate(*all_dfs)*y
