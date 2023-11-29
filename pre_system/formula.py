@@ -156,7 +156,7 @@ class Indicator(Formula):
                  name: str,
                  annual: str,
                  indicators: list[str],
-                 weights: list[str | float] = None,
+                 weights: list[str] | list[float] = None,
                  correction: str = None,
                  normalise=False,
                  aggregation: str = 'sum'):
@@ -357,7 +357,7 @@ class FDeflate(Formula):
                  name: str,
                  formula: Formula,
                  indicators: list[str],
-                 weights: list[str | float] = None,
+                 weights: list[str] | list[float] = None,
                  correction: str = None,
                  normalise=False):
         """
@@ -516,7 +516,7 @@ class FInflate(Formula):
                  name: str,
                  formula: Formula,
                  indicators: list[str],
-                 weights: list[str | float] = None,
+                 weights: list[str] | list[float] = None,
                  correction: str = None,
                  normalise=False):
         """
@@ -762,7 +762,7 @@ class FSumProd(Formula):
     def __init__(self,
                  name,
                  formulae: list[Formula],
-                 coefficients: list[float] | list[str]):
+                 weights: list[float] | list[str]):
         """
         Initialize an FSumProd object.
 
@@ -785,13 +785,13 @@ class FSumProd(Formula):
         if all(isinstance(x, Formula) for x in formulae) is False:
             raise TypeError('*formulae must be of type Formula')
         self._formulae = formulae
-        self._coefficients = coefficients
+        self._weights = weights
         self._calls_on = {x.name: x for x in formulae}
 
     @property
     def what(self):
-        return '+'.join(['*'.join([x.name, str(y)]) for x, y in
-                         zip(self._formulae, self._coefficients)])
+        return '+'.join(['*'.join([x.name, str(y).lower()]) for x, y in
+                         zip(self._formulae, self._weights)])
 
     def indicators_weights(self, trace=True):
         indicators_weights = []
@@ -845,10 +845,25 @@ class FSumProd(Formula):
         if any(x.evaluate(*all_dfs) is None for x in self._formulae):
             raise ValueError('some of the formulae do not evaluate')
 
-        return sum(
-            x.evaluate(*all_dfs)*y
-            for x, y in zip(self._formulae, self._coefficients)
-        )
+        if all(isinstance(x, str) for x in self._weights):
+            if weights_df is None:
+                raise NameError(f'{self.name} expects weights_df')
+            if all(x in weights_df.columns for x in self._weights) is False:
+                missing = [x for x in self._weights if x not in weights_df.columns]
+                raise NameError(f'Cannot find {",".join(missing)} in weights_df')
+            weight_vector = (
+                weights_df[weights_df.index.year == self.baseyear][self._weights].sum().tolist()
+            )
+            return sum(
+                x.evaluate(*all_dfs)*y
+                for x, y in zip(self._formulae, weight_vector)
+            )
+        if all(isinstance(x, float) for x in self._weights):
+            return sum(
+                x.evaluate(*all_dfs)*y
+                for x, y in zip(self._formulae, self._weights)
+            )
+        raise TypeError('All weights must be str or float')
 
 
 class FMult(Formula):
