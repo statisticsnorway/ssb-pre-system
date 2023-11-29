@@ -156,7 +156,7 @@ class Indicator(Formula):
                  name: str,
                  annual: str,
                  indicators: list[str],
-                 weights: list[str | float] = None,
+                 weights: list[str] | list[float] = None,
                  correction: str = None,
                  normalise=False,
                  aggregation: str = 'sum'):
@@ -357,7 +357,7 @@ class FDeflate(Formula):
                  name: str,
                  formula: Formula,
                  indicators: list[str],
-                 weights: list[str | float] = None,
+                 weights: list[str] | list[float] = None,
                  correction: str = None,
                  normalise=False):
         """
@@ -516,7 +516,7 @@ class FInflate(Formula):
                  name: str,
                  formula: Formula,
                  indicators: list[str],
-                 weights: list[str | float] = None,
+                 weights: list[str] | list[float] = None,
                  correction: str = None,
                  normalise=False):
         """
