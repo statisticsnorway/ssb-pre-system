@@ -193,6 +193,9 @@ class Indicator(Formula):
             raise IndexError('weight_names must have same length as indicator_names')
         self._annual = annual
         self._indicators = [x.strip() for x in indicators]
+        if weights:
+            if all(isinstance(x, type(weights[0])) for x in weights) is False:
+                raise TypeError('all weights must be of same type')
         self._weights = weights
         self._correction = correction
         self._normalise = normalise
@@ -391,6 +394,9 @@ class FDeflate(Formula):
             raise IndexError('weight_names must have same length as indicator_names')
         self._formula = formula
         self._indicators = [x.strip() for x in indicators]
+        if weights:
+            if all(isinstance(x, type(weights[0])) for x in weights) is False:
+                raise TypeError('all weights must be of same type')
         self._weights = weights
         self._correction = correction
         self._normalise = normalise
@@ -550,6 +556,9 @@ class FInflate(Formula):
             raise IndexError('weight_names must have same length as indicator_names')
         self._formula = formula
         self._indicators = [x.strip() for x in indicators]
+        if weights:
+            if all(isinstance(x, type(weights[0])) for x in weights) is False:
+                raise TypeError('all weights must be of same type')
         self._weights = weights
         self._correction = correction
         self._normalise = normalise
@@ -785,6 +794,9 @@ class FSumProd(Formula):
         if all(isinstance(x, Formula) for x in formulae) is False:
             raise TypeError('*formulae must be of type Formula')
         self._formulae = formulae
+        if weights:
+            if all(isinstance(x, type(weights[0])) for x in weights) is False:
+                raise TypeError('all weights must be of same type')
         self._weights = weights
         self._calls_on = {x.name: x for x in formulae}
 
