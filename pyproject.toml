@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "nr-forsystem"
+name = "ssb-pre-system"
 version = "0.5.0"
 description = "Forsystem for månedlige og kvartalsevise NR-statistikker"
 authors = ["Magnus Kvåle Helliesen <magnus.helliesen@gmail.com>"]
