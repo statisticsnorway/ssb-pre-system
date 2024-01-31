@@ -1,10 +1,10 @@
 [tool.poetry]
 name = "ssb-pre-system"
-version = "0.5.3"
+version = "0.5.4"
 description = "Forsystem for månedlige og kvartalsevise NR-statistikker"
 authors = ["Magnus Kvåle Helliesen <magnus.helliesen@gmail.com>"]
 license = "MIT"
-packages = [{include = "pre_system"}]
+packages = [{include = "pre_system", from = "src"}]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.11"
