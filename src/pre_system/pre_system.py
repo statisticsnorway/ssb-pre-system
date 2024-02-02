@@ -5,7 +5,7 @@
 
 import pandas as pd
 import datetime
-from pre_system.formula import Formula
+from .formula import Formula
 
 
 class PreSystem:
