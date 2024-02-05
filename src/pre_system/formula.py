@@ -1229,7 +1229,7 @@ class FJoin(Formula):
     def __init__(self,
                  name: str,
                  formula1: Formula,
-                 formula2: Formula,
+                 formula0: Formula,
                  from_year: int):
         """
         Initialize an FJoin object.
@@ -1240,43 +1240,43 @@ class FJoin(Formula):
             The name of the FJoin formula.
         formula1 : Formula
             The Formula object to be joined starting in from_year.
-        formula2 : Formula
+        formula0 : Formula
             The Formula object to be joined ending before from_year.
         from_year : str
-            The year to join formula1 and formula2
+            The year to join formula1 and formula0
 
         Raises
         ------
         TypeError
             If formula1 is not of type Formula.
         TypeError
-            If formula2 is not of type Formula.
+            If formula0 is not of type Formula.
         TypeError
             If from year is not of type str.
         """
 
         super().__init__(name)
-        if isinstance(formula1, Formula) and isinstance(formula1, Formula) is False:
-            raise TypeError('formula1 and formula2 must be of type Formula')
+        if isinstance(formula1, Formula) and isinstance(formula0, Formula) is False:
+            raise TypeError('formula1 and formula0 must be of type Formula')
         if isinstance(from_year, int) is False:
             raise TypeError('from_year must must be of type int')
         self._formula1 = formula1
-        self._formula2 = formula2
+        self._formula0 = formula0
         self._from_year = from_year
-        self._calls_on = {formula1.name: formula1, formula2.name: formula2}
+        self._calls_on = {formula1.name: formula1, formula0.name: formula0}
 
     @property
     def indicators(self):
-        return list(set(self._formula1.indicators).union(self._formula2.indicators))
+        return list(set(self._formula1.indicators).union(self._formula0.indicators))
 
     @property
     def what(self):
-        return f'{self._formula1.name} if year>={self._from_year} else {self._formula2.name}'
+        return f'{self._formula1.name} if year>={self._from_year} else {self._formula0.name}'
 
     def indicators_weights(self, trace=True):
         indicators_weights = []
         if trace:
-            for formula in [self._formula1, self._formula2]:
+            for formula in [self._formula1, self._formula0]:
                 indicators_weights.extend(formula.indicators_weights(trace=trace))
         return indicators_weights
 
@@ -1323,11 +1323,11 @@ class FJoin(Formula):
         super().evaluate(*all_dfs)
 
         evaluated_formula1 = self._formula1.evaluate(*all_dfs)
-        evaluated_formula2 = self._formula2.evaluate(*all_dfs)
+        evaluated_formula0 = self._formula0.evaluate(*all_dfs)
 
         return pd.concat(
             [
-                evaluated_formula2[evaluated_formula2.index.year < self._from_year],
+                evaluated_formula0[evaluated_formula0.index.year < self._from_year],
                 evaluated_formula1[evaluated_formula1.index.year >= self._from_year]
             ]
         )
