@@ -337,22 +337,24 @@ class Indicator(Formula):
                 raise NameError(f'{self.name} expects correction_df')
             if (self._correction in correction_df.columns) is False:
                 raise NameError(f'{self._correction} is not in correction_df')
-            corrected_indicators = weighted_indicators*correction_df[self._correction]
+            corrected_indicators = weighted_indicators*correction_df.loc[:, self._correction]
         else:
             corrected_indicators = weighted_indicators
 
         evaluated_series = (
             annual_df.loc[annual_df.index.year == self.baseyear, self._annual].to_numpy()
             * corrected_indicators.div(
-                    corrected_indicators.loc[
-                        corrected_indicators.index.year == self.baseyear
-                    ].sum()
-                    if self._aggregation == 'sum' else
-                    corrected_indicators.loc[
-                        corrected_indicators.index.year == self.baseyear
-                    ].mean()
-                )
+                corrected_indicators
+                .loc[
+                    corrected_indicators.index.year == self.baseyear
+                ].sum()
+                if self._aggregation == 'sum' else
+                corrected_indicators
+                .loc[
+                    corrected_indicators.index.year == self.baseyear
+                ].mean()
             )
+        )
 
         return evaluated_series
 
@@ -463,7 +465,8 @@ class FDeflate(Formula):
         if self._normalise:
             indicator_matrix = (
                 indicator_matrix.div(
-                    indicator_matrix.loc[
+                    indicator_matrix
+                    .loc[
                         indicator_matrix.index.year == self.baseyear
                     ].sum()
                 )
@@ -509,7 +512,9 @@ class FDeflate(Formula):
             formula_corrected = formula_divided
 
         evaluated_series = (
-            evaluated_formula.loc[evaluated_formula.index.year == self.baseyear].sum()
+            evaluated_formula
+            .loc[evaluated_formula.index.year == self.baseyear]
+            .sum()
             * formula_corrected.div(
                 formula_corrected
                 .loc[
@@ -627,7 +632,8 @@ class FInflate(Formula):
         if self._normalise:
             indicator_matrix = (
                 indicator_matrix.div(
-                    indicator_matrix[
+                    indicator_matrix
+                    .loc[
                         indicator_matrix.index.year == self.baseyear
                     ].sum()
                 )
@@ -673,9 +679,12 @@ class FInflate(Formula):
             formula_corrected = formula_divided
 
         evaluated_series = (
-            evaluated_formula.loc[evaluated_formula.index.year == self.baseyear].sum()
+            evaluated_formula
+            .loc[evaluated_formula.index.year == self.baseyear]
+            .sum()
             * formula_corrected.div(
-                formula_corrected.loc[
+                formula_corrected
+                .loc[
                     formula_corrected.index.year == self.baseyear
                 ].sum()
             )
