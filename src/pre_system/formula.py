@@ -295,11 +295,12 @@ class Indicator(Formula):
             missing = [x for x in self._indicators if x not in indicators_df.columns]
             raise NameError(f'Cannot find {",".join(missing)} in indicators_df')
 
-        indicator_matrix = indicators_df[self._indicators]
+        indicator_matrix = indicators_df.loc[:, self._indicators]
         if self._normalise:
             indicator_matrix = (
                 indicator_matrix.div(
-                    indicator_matrix[
+                    indicator_matrix
+                    .loc[
                         indicator_matrix.index.year == self.baseyear
                     ].sum()
                 )
@@ -317,7 +318,8 @@ class Indicator(Formula):
 
             if all(isinstance(x, str) for x in self._weights):
                 weight_vector = (
-                    weights_df[weights_df.index.year == self.baseyear][self._weights]
+                    weights_df
+                    .loc[weights_df.index.year == self.baseyear, self._weights]
                     .to_numpy()
                 )
             if all(isinstance(x, float) for x in self._weights):
@@ -340,13 +342,13 @@ class Indicator(Formula):
             corrected_indicators = weighted_indicators
 
         evaluated_series = (
-            annual_df[annual_df.index.year == self.baseyear][self._annual].to_numpy()
+            annual_df.loc[annual_df.index.year == self.baseyear, self._annual].to_numpy()
             * corrected_indicators.div(
-                    corrected_indicators[
+                    corrected_indicators.loc[
                         corrected_indicators.index.year == self.baseyear
                     ].sum()
                     if self._aggregation == 'sum' else
-                    corrected_indicators[
+                    corrected_indicators.loc[
                         corrected_indicators.index.year == self.baseyear
                     ].mean()
                 )
@@ -457,11 +459,11 @@ class FDeflate(Formula):
         if all(x in indicators_df.columns for x in self._indicators) is False:
             raise NameError(f'All of {",".join(self._indicators)} is not in indicators_df')
 
-        indicator_matrix = indicators_df[self._indicators]
+        indicator_matrix = indicators_df.loc[:, self._indicators]
         if self._normalise:
             indicator_matrix = (
                 indicator_matrix.div(
-                    indicator_matrix[
+                    indicator_matrix.loc[
                         indicator_matrix.index.year == self.baseyear
                     ].sum()
                 )
@@ -479,7 +481,8 @@ class FDeflate(Formula):
 
             if all(isinstance(x, str) for x in self._weights):
                 weight_vector = (
-                    weights_df[weights_df.index.year == self.baseyear][self._weights]
+                    weights_df
+                    .loc[weights_df.index.year == self.baseyear, self._weights]
                     .to_numpy()
                 )
             if all(isinstance(x, float) for x in self._weights):
@@ -501,14 +504,15 @@ class FDeflate(Formula):
                 raise NameError(f'{self.name} expects correction_df')
             if (self._correction in correction_df.columns) is False:
                 raise NameError(f'{self._correction} is not in correction_df')
-            formula_corrected = formula_divided*correction_df[self._correction]
+            formula_corrected = formula_divided*correction_df.loc[:, self._correction]
         else:
             formula_corrected = formula_divided
 
         evaluated_series = (
-            evaluated_formula[evaluated_formula.index.year == self.baseyear].sum()
+            evaluated_formula.loc[evaluated_formula.index.year == self.baseyear].sum()
             * formula_corrected.div(
-                formula_corrected[
+                formula_corrected
+                .loc[
                     formula_corrected.index.year == self.baseyear
                 ].sum()
             )
@@ -619,7 +623,7 @@ class FInflate(Formula):
         if all(x in indicators_df.columns for x in self._indicators) is False:
             raise NameError(f'All of {",".join(self._indicators)} is not in indicators_df')
 
-        indicator_matrix = indicators_df[self._indicators]
+        indicator_matrix = indicators_df.loc[:, self._indicators]
         if self._normalise:
             indicator_matrix = (
                 indicator_matrix.div(
@@ -641,7 +645,8 @@ class FInflate(Formula):
 
             if all(isinstance(x, str) for x in self._weights):
                 weight_vector = (
-                    weights_df[weights_df.index.year == self.baseyear][self._weights]
+                    weights_df
+                    .loc[weights_df.index.year == self.baseyear, self._weights]
                     .to_numpy()
                 )
             if all(isinstance(x, float) for x in self._weights):
@@ -663,14 +668,14 @@ class FInflate(Formula):
                 raise NameError(f'{self.name} expects correction_df')
             if (self._correction in correction_df.columns) is False:
                 raise NameError(f'{self._correction} is not in correction_df')
-            formula_corrected = formula_divided*correction_df[self._correction]
+            formula_corrected = formula_divided*correction_df.loc[:, self._correction]
         else:
             formula_corrected = formula_divided
 
         evaluated_series = (
-            evaluated_formula[evaluated_formula.index.year == self.baseyear].sum()
+            evaluated_formula.loc[evaluated_formula.index.year == self.baseyear].sum()
             * formula_corrected.div(
-                formula_corrected[
+                formula_corrected.loc[
                     formula_corrected.index.year == self.baseyear
                 ].sum()
             )
