@@ -97,7 +97,7 @@ class Formula:
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
                  correction_df: pd.DataFrame = None,
-                 test_dfs: bool: False
+                 test_dfs: bool=False
                 ) -> pd.Series:
         """
         Evaluate the formula using the provided data.
