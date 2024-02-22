@@ -289,7 +289,8 @@ class Indicator(Formula):
         super().evaluate(annual_df,
                          indicators_df,
                          weights_df,
-                         correction_df)
+                         correction_df,
+                         test_dfs=test_dfs)
 
         if (self._annual in annual_df.columns) is False:
             raise NameError(f'Cannot find {self._annual} in annual_df')
@@ -460,7 +461,7 @@ class FDeflate(Formula):
                  test_dfs: bool=True
                 ) -> pd.Series:
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
         if all(x in indicators_df.columns for x in self._indicators) is False:
             raise NameError(f'All of {",".join(self._indicators)} is not in indicators_df')
@@ -502,7 +503,7 @@ class FDeflate(Formula):
         else:
             weighted_indicators = indicator_matrix.sum(axis=1, skipna=False)
 
-        evaluated_formula = self._formula.evaluate(*all_dfs)
+        evaluated_formula = self._formula.evaluate(*all_dfs, test_dfs=test_dfs)
 
         formula_divided = evaluated_formula.div(weighted_indicators)
 
@@ -628,7 +629,7 @@ class FInflate(Formula):
                  test_dfs: bool=True
                 ) -> pd.Series:
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
         if all(x in indicators_df.columns for x in self._indicators) is False:
             raise NameError(f'All of {",".join(self._indicators)} is not in indicators_df')
@@ -670,7 +671,7 @@ class FInflate(Formula):
         else:
             weighted_indicators = indicator_matrix.sum(axis=1, skipna=False)
 
-        evaluated_formula = self._formula.evaluate(*all_dfs)
+        evaluated_formula = self._formula.evaluate(*all_dfs, test_dfs=test_dfs)
 
         formula_divided = evaluated_formula*weighted_indicators
 
@@ -776,13 +777,13 @@ class FSum(Formula):
         """
 
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
-        if any(x.evaluate(*all_dfs) is None for x in self._formulae):
+        if any(x.evaluate(*all_dfs, test_dfs=test_dfs) is None for x in self._formulae):
             raise ValueError('some of the formulae do not evaluate')
 
         return sum(
-            x.evaluate(*all_dfs)
+            x.evaluate(*all_dfs, test_dfs=test_dfs)
             for x in self._formulae
         )
 
@@ -873,9 +874,9 @@ class FSumProd(Formula):
         """
 
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
-        if any(x.evaluate(*all_dfs) is None for x in self._formulae):
+        if any(x.evaluate(*all_dfs, test_dfs=test_dfs) is None for x in self._formulae):
             raise ValueError('some of the formulae do not evaluate')
 
         if all(isinstance(x, str) for x in self._weights):
@@ -888,12 +889,12 @@ class FSumProd(Formula):
                 weights_df[weights_df.index.year == self.baseyear][self._weights].sum().tolist()
             )
             return sum(
-                x.evaluate(*all_dfs)*y
+                x.evaluate(*all_dfs, test_dfs=test_dfs)*y
                 for x, y in zip(self._formulae, weight_vector)
             )
         if all(isinstance(x, float) for x in self._weights):
             return sum(
-                x.evaluate(*all_dfs)*y
+                x.evaluate(*all_dfs, test_dfs=test_dfs)*y
                 for x, y in zip(self._formulae, self._weights)
             )
         raise TypeError('All weights must be str or float')
@@ -963,16 +964,16 @@ class FMult(Formula):
         """
 
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
-        if self._formula1.evaluate(*all_dfs) is None:
+        if self._formula1.evaluate(*all_dfs, test_dfs=test_dfs) is None:
             raise ValueError(f'formula1 does not evaluate')
-        if self._formula2.evaluate(*all_dfs) is None:
+        if self._formula2.evaluate(*all_dfs, test_dfs=test_dfs) is None:
             raise ValueError(f'formula2 does not evaluate')
 
         return (
-            self._formula1.evaluate(annual_df, indicators_df, weights_df, correction_df)
-            * self._formula2.evaluate(annual_df, indicators_df, weights_df, correction_df)
+            self._formula1.evaluate(*all_dfs, test_dfs=test_dfs)
+            * self._formula2.evaluate(*all_dfs, test_dfs=test_dfs)
             )
 
 
@@ -1040,16 +1041,16 @@ class FDiv(Formula):
         """
 
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
-        if self._formula1.evaluate(*all_dfs) is None:
+        if self._formula1.evaluate(*all_dfs, test_dfs=test_dfs) is None:
             raise ValueError(f'formula1 does not evaluate')
-        if self._formula2.evaluate(*all_dfs) is None:
+        if self._formula2.evaluate(*all_dfs, test_dfs=test_dfs) is None:
             raise ValueError(f'formula2 does not evaluate')
 
         return (
-            self._formula1.evaluate(annual_df, indicators_df, weights_df, correction_df)
-            .div(self._formula2.evaluate(annual_df, indicators_df, weights_df, correction_df))
+            self._formula1.evaluate(*all_dfs, test_dfs=test_dfs)
+            .div(self._formula2.evaluate(*all_dfs, test_dfs=test_dfs))
             )
 
 
@@ -1142,9 +1143,9 @@ class MultCorr(Formula):
         """
 
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
-        evaluated_formula = self._formula.evaluate(*all_dfs)
+        evaluated_formula = self._formula.evaluate(*all_dfs, test_dfs=test_dfs)
 
         formula_corrected = evaluated_formula*correction_df[self._correction_name]
 
@@ -1241,11 +1242,11 @@ class AddCorr(Formula):
         """
 
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
         return (
             correction_df[self._correction_name]
-            + self._formula.evaluate(*all_dfs)
+            + self._formula.evaluate(*all_dfs, test_dfs=test_dfs)
             - correction_df[correction_df.index.year == self.baseyear][self._correction_name].mean()
         )
 
@@ -1346,10 +1347,10 @@ class FJoin(Formula):
         """
 
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
-        evaluated_formula1 = self._formula1.evaluate(*all_dfs)
-        evaluated_formula0 = self._formula0.evaluate(*all_dfs)
+        evaluated_formula1 = self._formula1.evaluate(*all_dfs, test_dfs=test_dfs)
+        evaluated_formula0 = self._formula0.evaluate(*all_dfs, test_dfs=test_dfs)
 
         return pd.concat(
             [
