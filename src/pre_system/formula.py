@@ -96,7 +96,8 @@ class Formula:
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool: False
                 ) -> pd.Series:
         """
         Evaluate the formula using the provided data.
@@ -127,14 +128,15 @@ class Formula:
         if self.baseyear is None:
             raise ValueError('baseyear is None')
 
-        self._check_df('annual_df', annual_df, self.baseyear, 'a')
-        self._check_df('indicators_df', indicators_df, self.baseyear)
+        if test_dfs:
+            self._check_df('annual_df', annual_df, self.baseyear, 'a')
+            self._check_df('indicators_df', indicators_df, self.baseyear)
 
-        if weights_df is not None:
-            self._check_df('weights_df', weights_df, self.baseyear, 'a')
+            if weights_df is not None:
+                self._check_df('weights_df', weights_df, self.baseyear, 'a')
 
-        if correction_df is not None:
-            self._check_df('correction_df', correction_df, self.baseyear, indicators_df.index.freq)
+            if correction_df is not None:
+                self._check_df('correction_df', correction_df, self.baseyear, indicators_df.index.freq)
 
     # Method that checks that conditions are met for DataFrame to be valid input
     @staticmethod
