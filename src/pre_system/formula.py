@@ -250,7 +250,8 @@ class Indicator(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
@@ -455,7 +456,8 @@ class FDeflate(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
@@ -622,7 +624,8 @@ class FInflate(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs)
@@ -736,7 +739,8 @@ class FSum(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
@@ -832,7 +836,8 @@ class FSumProd(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
@@ -921,7 +926,8 @@ class FMult(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
@@ -997,7 +1003,8 @@ class FDiv(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
@@ -1098,7 +1105,8 @@ class MultCorr(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
@@ -1196,7 +1204,8 @@ class AddCorr(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
@@ -1300,7 +1309,8 @@ class FJoin(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
