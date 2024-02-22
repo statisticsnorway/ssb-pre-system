@@ -96,7 +96,8 @@ class Formula:
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the formula using the provided data.
@@ -127,14 +128,15 @@ class Formula:
         if self.baseyear is None:
             raise ValueError('baseyear is None')
 
-        self._check_df('annual_df', annual_df, self.baseyear, 'a')
-        self._check_df('indicators_df', indicators_df, self.baseyear)
+        if test_dfs:
+            self._check_df('annual_df', annual_df, self.baseyear, 'a')
+            self._check_df('indicators_df', indicators_df, self.baseyear)
 
-        if weights_df is not None:
-            self._check_df('weights_df', weights_df, self.baseyear, 'a')
+            if weights_df is not None:
+                self._check_df('weights_df', weights_df, self.baseyear, 'a')
 
-        if correction_df is not None:
-            self._check_df('correction_df', correction_df, self.baseyear, indicators_df.index.freq)
+            if correction_df is not None:
+                self._check_df('correction_df', correction_df, self.baseyear, indicators_df.index.freq)
 
     # Method that checks that conditions are met for DataFrame to be valid input
     @staticmethod
@@ -248,7 +250,8 @@ class Indicator(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
@@ -286,7 +289,8 @@ class Indicator(Formula):
         super().evaluate(annual_df,
                          indicators_df,
                          weights_df,
-                         correction_df)
+                         correction_df,
+                         test_dfs=test_dfs)
 
         if (self._annual in annual_df.columns) is False:
             raise NameError(f'Cannot find {self._annual} in annual_df')
@@ -295,11 +299,12 @@ class Indicator(Formula):
             missing = [x for x in self._indicators if x not in indicators_df.columns]
             raise NameError(f'Cannot find {",".join(missing)} in indicators_df')
 
-        indicator_matrix = indicators_df[self._indicators]
+        indicator_matrix = indicators_df.loc[:, self._indicators]
         if self._normalise:
             indicator_matrix = (
                 indicator_matrix.div(
-                    indicator_matrix[
+                    indicator_matrix
+                    .loc[
                         indicator_matrix.index.year == self.baseyear
                     ].sum()
                 )
@@ -317,7 +322,8 @@ class Indicator(Formula):
 
             if all(isinstance(x, str) for x in self._weights):
                 weight_vector = (
-                    weights_df[weights_df.index.year == self.baseyear][self._weights]
+                    weights_df
+                    .loc[weights_df.index.year == self.baseyear, self._weights]
                     .to_numpy()
                 )
             if all(isinstance(x, float) for x in self._weights):
@@ -335,22 +341,24 @@ class Indicator(Formula):
                 raise NameError(f'{self.name} expects correction_df')
             if (self._correction in correction_df.columns) is False:
                 raise NameError(f'{self._correction} is not in correction_df')
-            corrected_indicators = weighted_indicators*correction_df[self._correction]
+            corrected_indicators = weighted_indicators*correction_df.loc[:, self._correction]
         else:
             corrected_indicators = weighted_indicators
 
         evaluated_series = (
-            annual_df[annual_df.index.year == self.baseyear][self._annual].to_numpy()
+            annual_df.loc[annual_df.index.year == self.baseyear, self._annual].to_numpy()
             * corrected_indicators.div(
-                    corrected_indicators[
-                        corrected_indicators.index.year == self.baseyear
-                    ].sum()
-                    if self._aggregation == 'sum' else
-                    corrected_indicators[
-                        corrected_indicators.index.year == self.baseyear
-                    ].mean()
-                )
+                corrected_indicators
+                .loc[
+                    corrected_indicators.index.year == self.baseyear
+                ].sum()
+                if self._aggregation == 'sum' else
+                corrected_indicators
+                .loc[
+                    corrected_indicators.index.year == self.baseyear
+                ].mean()
             )
+        )
 
         return evaluated_series
 
@@ -449,19 +457,21 @@ class FDeflate(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
         if all(x in indicators_df.columns for x in self._indicators) is False:
             raise NameError(f'All of {",".join(self._indicators)} is not in indicators_df')
 
-        indicator_matrix = indicators_df[self._indicators]
+        indicator_matrix = indicators_df.loc[:, self._indicators]
         if self._normalise:
             indicator_matrix = (
                 indicator_matrix.div(
-                    indicator_matrix[
+                    indicator_matrix
+                    .loc[
                         indicator_matrix.index.year == self.baseyear
                     ].sum()
                 )
@@ -479,7 +489,8 @@ class FDeflate(Formula):
 
             if all(isinstance(x, str) for x in self._weights):
                 weight_vector = (
-                    weights_df[weights_df.index.year == self.baseyear][self._weights]
+                    weights_df
+                    .loc[weights_df.index.year == self.baseyear, self._weights]
                     .to_numpy()
                 )
             if all(isinstance(x, float) for x in self._weights):
@@ -492,7 +503,7 @@ class FDeflate(Formula):
         else:
             weighted_indicators = indicator_matrix.sum(axis=1, skipna=False)
 
-        evaluated_formula = self._formula.evaluate(*all_dfs)
+        evaluated_formula = self._formula.evaluate(*all_dfs, test_dfs=test_dfs)
 
         formula_divided = evaluated_formula.div(weighted_indicators)
 
@@ -501,14 +512,17 @@ class FDeflate(Formula):
                 raise NameError(f'{self.name} expects correction_df')
             if (self._correction in correction_df.columns) is False:
                 raise NameError(f'{self._correction} is not in correction_df')
-            formula_corrected = formula_divided*correction_df[self._correction]
+            formula_corrected = formula_divided*correction_df.loc[:, self._correction]
         else:
             formula_corrected = formula_divided
 
         evaluated_series = (
-            evaluated_formula[evaluated_formula.index.year == self.baseyear].sum()
+            evaluated_formula
+            .loc[evaluated_formula.index.year == self.baseyear]
+            .sum()
             * formula_corrected.div(
-                formula_corrected[
+                formula_corrected
+                .loc[
                     formula_corrected.index.year == self.baseyear
                 ].sum()
             )
@@ -611,19 +625,21 @@ class FInflate(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
         if all(x in indicators_df.columns for x in self._indicators) is False:
             raise NameError(f'All of {",".join(self._indicators)} is not in indicators_df')
 
-        indicator_matrix = indicators_df[self._indicators]
+        indicator_matrix = indicators_df.loc[:, self._indicators]
         if self._normalise:
             indicator_matrix = (
                 indicator_matrix.div(
-                    indicator_matrix[
+                    indicator_matrix
+                    .loc[
                         indicator_matrix.index.year == self.baseyear
                     ].sum()
                 )
@@ -641,7 +657,8 @@ class FInflate(Formula):
 
             if all(isinstance(x, str) for x in self._weights):
                 weight_vector = (
-                    weights_df[weights_df.index.year == self.baseyear][self._weights]
+                    weights_df
+                    .loc[weights_df.index.year == self.baseyear, self._weights]
                     .to_numpy()
                 )
             if all(isinstance(x, float) for x in self._weights):
@@ -654,7 +671,7 @@ class FInflate(Formula):
         else:
             weighted_indicators = indicator_matrix.sum(axis=1, skipna=False)
 
-        evaluated_formula = self._formula.evaluate(*all_dfs)
+        evaluated_formula = self._formula.evaluate(*all_dfs, test_dfs=test_dfs)
 
         formula_divided = evaluated_formula*weighted_indicators
 
@@ -663,14 +680,17 @@ class FInflate(Formula):
                 raise NameError(f'{self.name} expects correction_df')
             if (self._correction in correction_df.columns) is False:
                 raise NameError(f'{self._correction} is not in correction_df')
-            formula_corrected = formula_divided*correction_df[self._correction]
+            formula_corrected = formula_divided*correction_df.loc[:, self._correction]
         else:
             formula_corrected = formula_divided
 
         evaluated_series = (
-            evaluated_formula[evaluated_formula.index.year == self.baseyear].sum()
+            evaluated_formula
+            .loc[evaluated_formula.index.year == self.baseyear]
+            .sum()
             * formula_corrected.div(
-                formula_corrected[
+                formula_corrected
+                .loc[
                     formula_corrected.index.year == self.baseyear
                 ].sum()
             )
@@ -720,7 +740,8 @@ class FSum(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
@@ -756,13 +777,13 @@ class FSum(Formula):
         """
 
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
-        if any(x.evaluate(*all_dfs) is None for x in self._formulae):
+        if any(x.evaluate(*all_dfs, test_dfs=test_dfs) is None for x in self._formulae):
             raise ValueError('some of the formulae do not evaluate')
 
         return sum(
-            x.evaluate(*all_dfs)
+            x.evaluate(*all_dfs, test_dfs=test_dfs)
             for x in self._formulae
         )
 
@@ -816,7 +837,8 @@ class FSumProd(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
@@ -852,9 +874,9 @@ class FSumProd(Formula):
         """
 
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
-        if any(x.evaluate(*all_dfs) is None for x in self._formulae):
+        if any(x.evaluate(*all_dfs, test_dfs=test_dfs) is None for x in self._formulae):
             raise ValueError('some of the formulae do not evaluate')
 
         if all(isinstance(x, str) for x in self._weights):
@@ -867,12 +889,12 @@ class FSumProd(Formula):
                 weights_df[weights_df.index.year == self.baseyear][self._weights].sum().tolist()
             )
             return sum(
-                x.evaluate(*all_dfs)*y
+                x.evaluate(*all_dfs, test_dfs=test_dfs)*y
                 for x, y in zip(self._formulae, weight_vector)
             )
         if all(isinstance(x, float) for x in self._weights):
             return sum(
-                x.evaluate(*all_dfs)*y
+                x.evaluate(*all_dfs, test_dfs=test_dfs)*y
                 for x, y in zip(self._formulae, self._weights)
             )
         raise TypeError('All weights must be str or float')
@@ -905,7 +927,8 @@ class FMult(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
@@ -941,16 +964,16 @@ class FMult(Formula):
         """
 
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
-        if self._formula1.evaluate(*all_dfs) is None:
+        if self._formula1.evaluate(*all_dfs, test_dfs=test_dfs) is None:
             raise ValueError(f'formula1 does not evaluate')
-        if self._formula2.evaluate(*all_dfs) is None:
+        if self._formula2.evaluate(*all_dfs, test_dfs=test_dfs) is None:
             raise ValueError(f'formula2 does not evaluate')
 
         return (
-            self._formula1.evaluate(annual_df, indicators_df, weights_df, correction_df)
-            * self._formula2.evaluate(annual_df, indicators_df, weights_df, correction_df)
+            self._formula1.evaluate(*all_dfs, test_dfs=test_dfs)
+            * self._formula2.evaluate(*all_dfs, test_dfs=test_dfs)
             )
 
 
@@ -981,7 +1004,8 @@ class FDiv(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
@@ -1017,16 +1041,16 @@ class FDiv(Formula):
         """
 
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
-        if self._formula1.evaluate(*all_dfs) is None:
+        if self._formula1.evaluate(*all_dfs, test_dfs=test_dfs) is None:
             raise ValueError(f'formula1 does not evaluate')
-        if self._formula2.evaluate(*all_dfs) is None:
+        if self._formula2.evaluate(*all_dfs, test_dfs=test_dfs) is None:
             raise ValueError(f'formula2 does not evaluate')
 
         return (
-            self._formula1.evaluate(annual_df, indicators_df, weights_df, correction_df)
-            .div(self._formula2.evaluate(annual_df, indicators_df, weights_df, correction_df))
+            self._formula1.evaluate(*all_dfs, test_dfs=test_dfs)
+            .div(self._formula2.evaluate(*all_dfs, test_dfs=test_dfs))
             )
 
 
@@ -1082,7 +1106,8 @@ class MultCorr(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
@@ -1118,9 +1143,9 @@ class MultCorr(Formula):
         """
 
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
-        evaluated_formula = self._formula.evaluate(*all_dfs)
+        evaluated_formula = self._formula.evaluate(*all_dfs, test_dfs=test_dfs)
 
         formula_corrected = evaluated_formula*correction_df[self._correction_name]
 
@@ -1180,7 +1205,8 @@ class AddCorr(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
@@ -1216,11 +1242,11 @@ class AddCorr(Formula):
         """
 
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
         return (
             correction_df[self._correction_name]
-            + self._formula.evaluate(*all_dfs)
+            + self._formula.evaluate(*all_dfs, test_dfs=test_dfs)
             - correction_df[correction_df.index.year == self.baseyear][self._correction_name].mean()
         )
 
@@ -1284,7 +1310,8 @@ class FJoin(Formula):
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True
                 ) -> pd.Series:
         """
         Evaluate the data using the provided DataFrames and return the evaluated series.
@@ -1320,10 +1347,10 @@ class FJoin(Formula):
         """
 
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
-        super().evaluate(*all_dfs)
+        super().evaluate(*all_dfs, test_dfs=test_dfs)
 
-        evaluated_formula1 = self._formula1.evaluate(*all_dfs)
-        evaluated_formula0 = self._formula0.evaluate(*all_dfs)
+        evaluated_formula1 = self._formula1.evaluate(*all_dfs, test_dfs=test_dfs)
+        evaluated_formula0 = self._formula0.evaluate(*all_dfs, test_dfs=test_dfs)
 
         return pd.concat(
             [
