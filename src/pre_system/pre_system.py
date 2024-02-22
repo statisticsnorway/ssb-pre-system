@@ -254,18 +254,7 @@ class PreSystem:
         pd.DataFrame
             The evaluated formulas as a DataFrame.
         """
-        if self.baseyear in self.annuals_df.index.year is False:
-            raise IndexError(f'baseyear {baseyear} is out of range for annuals_df')
-        if self.baseyear in self.indicators_df.index.year is False:
-            raise IndexError(f'baseyear {baseyear} is out of range for indicators_df')
-        if self.weights_df is not None:
-            if self.baseyear in self.indicators_df.index.year is False:
-                raise IndexError(f'baseyear {baseyear} is out of range for weights_df')
-        if self.corrections_df is not None:
-            if self.baseyear in self.corrections_df.index.year is False:
-                raise IndexError(f'baseyear {baseyear} is out of range for corrections_df')
-
-        evaluate_df = pd.DataFrame()
+        self._check_dfs()
 
         for _, formula in self.formulae.items():
             if formula.baseyear != self.baseyear:
@@ -299,16 +288,7 @@ class PreSystem:
         pd.Series
             The evaluated formula as a Series.
         """
-        if self.baseyear in self.annuals_df.index.year is False:
-            raise IndexError(f'baseyear {baseyear} is out of range for annuals_df')
-        if self.baseyear in self.indicators_df.index.year is False:
-            raise IndexError(f'baseyear {baseyear} is out of range for indicators_df')
-        if self.weights_df is not None:
-            if self.baseyear in self.indicators_df.index.year is False:
-                raise IndexError(f'baseyear {baseyear} is out of range for weights_df')
-        if self.corrections_df is not None:
-            if self.baseyear in self.corrections_df.index.year is False:
-                raise IndexError(f'baseyear {baseyear} is out of range for corrections_df')
+        self._check_dfs()
 
         formula = self.formulae.get(name)
 
@@ -340,16 +320,7 @@ class PreSystem:
         pd.DataFrame
             The evaluated formulae as a DataFrame.
         """
-        if self.baseyear in self.annuals_df.index.year is False:
-            raise IndexError(f'baseyear {baseyear} is out of range for annuals_df')
-        if self.baseyear in self.indicators_df.index.year is False:
-            raise IndexError(f'baseyear {baseyear} is out of range for indicators_df')
-        if self.weights_df is not None:
-            if self.baseyear in self.indicators_df.index.year is False:
-                raise IndexError(f'baseyear {baseyear} is out of range for weights_df')
-        if self.corrections_df is not None:
-            if self.baseyear in self.corrections_df.index.year is False:
-                raise IndexError(f'baseyear {baseyear} is out of range for corrections_df')
+        self._check_dfs()
 
         evaluated = {}
         for name in names:
@@ -370,3 +341,17 @@ class PreSystem:
                 raise NameError(f'formula {name} is not in PreSystem {self.name}')
 
         return pd.concat(evaluated, axis=1)
+
+    def _check_dfs(self):
+        if self.baseyear in self.annuals_df.index.year is False:
+            raise IndexError(f'baseyear {self.baseyear} is out of range for annuals_df')
+        if self.baseyear in self.indicators_df.index.year is False:
+            raise IndexError(f'baseyear {self.baseyear} is out of range for indicators_df')
+        if self.weights_df is not None:
+            if self.baseyear in self.indicators_df.index.year is False:
+                raise IndexError(f'baseyear {self.baseyear} is out of range for weights_df')
+        if self.corrections_df is not None:
+            if self.baseyear in self.corrections_df.index.year is False:
+                raise IndexError(f'baseyear {self.baseyear} is out of range for corrections_df')
+            if self.corrections_df.index.freq != self.indicators_df.index.freq:
+                raise IndexError('corrections_df does not have the same frequency as indicators_df')
