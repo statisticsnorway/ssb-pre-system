@@ -254,33 +254,36 @@ class PreSystem:
         pd.DataFrame
             The evaluated formulas as a DataFrame.
         """
+        if self.baseyear in self.annuals_df.index.year is False:
+            raise IndexError(f'baseyear {baseyear} is out of range for annuals_df')
+        if self.baseyear in self.indicators_df.index.year is False:
+            raise IndexError(f'baseyear {baseyear} is out of range for indicators_df')
+        if self.weights_df is not None:
+            if self.baseyear in self.indicators_df.index.year is False:
+                raise IndexError(f'baseyear {baseyear} is out of range for weights_df')
+        if self.corrections_df is not None:
+            if self.baseyear in self.corrections_df.index.year is False:
+                raise IndexError(f'baseyear {baseyear} is out of range for corrections_df')
+
         evaluate_df = pd.DataFrame()
 
         for _, formula in self.formulae.items():
             if formula.baseyear != self.baseyear:
-                raise AttributeError(f'baseyear for formula {formula.name} is not {self.baseyear}')
+                raise AttributeError(f'baseyear for formula {formula.name} is not {self.baseyear}. Try setting baseyear')
 
-        evaluate_df = pd.DataFrame()
-
+        evaluated = {}
         for name, formula in self.formulae.items():
-            evaluate_df = pd.concat(
-                [
-                    evaluate_df,
-                    pd.DataFrame(
-                        formula
-                        .evaluate(
-                            self.annuals_df,
-                            self.indicators_df,
-                            self.weights_df,
-                            self.corrections_df,
-                            test_dfs=False),
-                        columns=[name]
-                    )
-                ],
-                axis=1
+            evaluated[name] = (
+                formula
+                .evaluate(
+                    self.annuals_df,
+                    self.indicators_df,
+                    self.weights_df,
+                    self.corrections_df,
+                    test_dfs=False)
             )
 
-        return evaluate_df
+        return pd.concat(evaluated, axis=1)
 
     def evaluate_formula(self, name: str) -> pd.Series:
         """
@@ -296,6 +299,17 @@ class PreSystem:
         pd.Series
             The evaluated formula as a Series.
         """
+        if self.baseyear in self.annuals_df.index.year is False:
+            raise IndexError(f'baseyear {baseyear} is out of range for annuals_df')
+        if self.baseyear in self.indicators_df.index.year is False:
+            raise IndexError(f'baseyear {baseyear} is out of range for indicators_df')
+        if self.weights_df is not None:
+            if self.baseyear in self.indicators_df.index.year is False:
+                raise IndexError(f'baseyear {baseyear} is out of range for weights_df')
+        if self.corrections_df is not None:
+            if self.baseyear in self.corrections_df.index.year is False:
+                raise IndexError(f'baseyear {baseyear} is out of range for corrections_df')
+
         formula = self.formulae.get(name)
 
         if formula is not None:
@@ -311,3 +325,48 @@ class PreSystem:
             )
         else:
             raise NameError(f'formula {name} is not in PreSystem {self.name}')
+
+    def evaluate_formulae(self, *names: str) -> pd.DataFrame:
+        """
+        Evaluate specific formulae using the provided data.
+
+        Parameters
+        ----------
+        formula_name : str
+            The names of the formulae to evaluate.
+
+        Returns
+        -------
+        pd.DataFrame
+            The evaluated formulae as a DataFrame.
+        """
+        if self.baseyear in self.annuals_df.index.year is False:
+            raise IndexError(f'baseyear {baseyear} is out of range for annuals_df')
+        if self.baseyear in self.indicators_df.index.year is False:
+            raise IndexError(f'baseyear {baseyear} is out of range for indicators_df')
+        if self.weights_df is not None:
+            if self.baseyear in self.indicators_df.index.year is False:
+                raise IndexError(f'baseyear {baseyear} is out of range for weights_df')
+        if self.corrections_df is not None:
+            if self.baseyear in self.corrections_df.index.year is False:
+                raise IndexError(f'baseyear {baseyear} is out of range for corrections_df')
+
+        evaluated = {}
+        for name in names:
+            formula = self.formulae.get(name)
+
+            if formula is not None:
+                evaluated[name] = (
+                    self
+                    ._formulae.get(name)
+                    .evaluate(
+                        self.annuals_df,
+                        self.indicators_df,
+                        self.weights_df,
+                        self.corrections_df,
+                        test_dfs=False)
+                )
+            else:
+                raise NameError(f'formula {name} is not in PreSystem {self.name}')
+
+        return pd.concat(evaluated, axis=1)
