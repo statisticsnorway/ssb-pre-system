@@ -343,15 +343,15 @@ class PreSystem:
         return pd.concat(evaluated, axis=1)
 
     def _check_dfs(self):
-        if self.baseyear in self.annuals_df.index.year is False:
+        if (self.baseyear in self.annuals_df.index.year) is False:
             raise IndexError(f'baseyear {self.baseyear} is out of range for annuals_df')
-        if self.baseyear in self.indicators_df.index.year is False:
+        if (self.baseyear in self.indicators_df.index.year) is False:
             raise IndexError(f'baseyear {self.baseyear} is out of range for indicators_df')
         if self.weights_df is not None:
-            if self.baseyear in self.indicators_df.index.year is False:
+            if (self.baseyear in self.indicators_df.index.year) is False:
                 raise IndexError(f'baseyear {self.baseyear} is out of range for weights_df')
         if self.corrections_df is not None:
-            if self.baseyear in self.corrections_df.index.year is False:
+            if (self.baseyear in self.corrections_df.index.year) is False:
                 raise IndexError(f'baseyear {self.baseyear} is out of range for corrections_df')
-            if self.corrections_df.index.freq != self.indicators_df.index.freq:
+            if (self.corrections_df.index.freq != self.indicators_df.index.freq):
                 raise IndexError('corrections_df does not have the same frequency as indicators_df')

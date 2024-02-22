@@ -68,11 +68,13 @@ class Formula:
                  annual_df: pd.DataFrame,
                  indicators_df: pd.DataFrame,
                  weights_df: pd.DataFrame = None,
-                 correction_df: pd.DataFrame = None):
+                 correction_df: pd.DataFrame = None,
+                 test_dfs: bool=True):
         return self.evaluate(annual_df,
                              indicators_df,
                              weights_df,
-                             correction_df)
+                             correction_df,
+                             test_dfs=test_dfs)
 
     def __add__(self, other):
         return FSum(f'{self.name}+{other.name}', self, other)
@@ -147,7 +149,7 @@ class Formula:
             raise AttributeError(f'{df_name}.index must be Pandas.PeriodIndex')
         if frequency and df.index.freq != frequency:
             raise AttributeError(f'{df_name} must have frequency {frequency}')
-        if df[df.index.year == baseyear].shape[0] == 0:
+        if (baseyear in df.index.year) is False:
             raise IndexError(f'baseyear {baseyear} is out of range for annual_df')
         if all(np.issubdtype(df[x].dtype, np.number) for x in df.columns) is False:
             raise TypeError(f'All columns in {df_name} must be numeric')
