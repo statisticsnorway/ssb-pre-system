@@ -306,7 +306,7 @@ class PreSystem:
                     self.annuals_df,
                     self.indicators_df,
                     self.weights_df,
-                    self.corrections_df
+                    self.corrections_df,
                     test_dfs=False)
             )
         else:
