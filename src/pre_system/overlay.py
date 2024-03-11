@@ -11,13 +11,13 @@ def overlay(*dfs):
 
     Parameters:
     -----------
-    *dfs : pandas.DataFrame or pandas.Series
+    ``*dfs`` : pandas.DataFrame or pandas.Series
         Multiple DataFrames or Series to be combined.
 
     Returns:
     --------
     pandas.DataFrame or pandas.Series
-        Combined DataFrame or Series with overlaid values.
+    Combined DataFrame or Series with overlaid values.
 
     Raises:
     -------

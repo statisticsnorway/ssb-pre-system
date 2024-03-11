@@ -252,7 +252,7 @@ class PreSystem:
         """Evaluate all registered formulas using the provided data.
 
         Returns:
-        -------
+        --------
         pd.DataFrame
             The evaluated formulas as a DataFrame.
         """

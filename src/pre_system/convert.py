@@ -111,7 +111,6 @@ def convert(input_df: pd.DataFrame, to_freq: str) -> pd.DataFrame:
 
 
 def convert_step(input_df: pd.DataFrame, to_freq: str) -> pd.DataFrame:
-    """ """
     freq_to_periods_per_year = {"a": 1, "q": 4, "m": 12}
     input_periods_per_year = freq_to_periods_per_year.get(
         input_df.index.freqstr[0].lower()

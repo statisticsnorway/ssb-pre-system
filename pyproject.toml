@@ -110,9 +110,9 @@ ignore = [
     "ANN205", # TODO Temporary removed this check, reenable later
     "D101",   # TODO Temporary removed this check, reenable later
     "D102",   # TODO Temporary removed this check, reenable later
+    "D103",   # TODO Temporary removed this check, reenable later
     "D105",   # TODO Temporary removed this check, reenable later
     "D107",   # TODO Temporary removed this check, reenable later
-    "D419",   # TODO Temporary removed this check, reenable later
 ]
 
 [tool.ruff.lint.isort]

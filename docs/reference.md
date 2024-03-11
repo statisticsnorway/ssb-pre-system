@@ -13,13 +13,37 @@ delete the .rst file afterwards.
 
 ```{eval-rst}
 pre\_system package
-=============================================================================
+===================
 
 
-pre\_system.functions module
------------------------------------------------------------------------------
+pre\_system.convert module
+--------------------------
 
-.. automodule:: pre_system.functions
+.. automodule:: pre_system.convert
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pre\_system.formula module
+--------------------------
+
+.. automodule:: pre_system.formula
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pre\_system.overlay module
+--------------------------
+
+.. automodule:: pre_system.overlay
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pre\_system.pre\_system module
+------------------------------
+
+.. automodule:: pre_system.pre_system
    :members:
    :undoc-members:
    :show-inheritance:
