@@ -2,11 +2,12 @@
 # Author: Magnus Kvåle Helliesen #
 # mkh@ssb.no                     #
 ##################################
+from typing import Any
 
 import pandas as pd
 
 
-def overlay(*dfs):
+def overlay(*dfs: pd.DataFrame | pd.Series[Any]) -> pd.DataFrame | pd.Series[float]:
     """Combines multiple Pandas DataFrames or Series by overlaying their values based on index alignment.
 
     Parameters:
@@ -32,23 +33,32 @@ def overlay(*dfs):
     It creates a new DataFrame or Series by combining the input objects.
     The index of the returned object is based on the union of indices from all input DataFrames or Series.
     """
-    if all(isinstance(x, pd.DataFrame) for x in dfs):
-        output = pd.DataFrame(dtype=float)
-    elif all(isinstance(x, pd.Series) for x in dfs):
-        output = pd.Series(dtype=float)
-    else:
-        raise TypeError("input must be all DataFrames or all Series")
+    if len(dfs) == 1:
+        return dfs[0]
 
     if all(isinstance(x.index, pd.PeriodIndex) for x in dfs) is False:
         raise AttributeError("all DataFrames/Series must have have Pandas.PeriodIndex")
 
-    if len(dfs) == 1:
-        return dfs[0]
-
-    if all(x.index.freq == y.index.freq for x, y in zip(dfs[:-1], dfs[1:])) is False:
+    if all(x.index.freq == y.index.freq for x, y in zip(dfs[:-1], dfs[1:])) is False:  # type: ignore
         raise AttributeError("all DataFrames/Series must have same freq")
 
+    if all(isinstance(x, pd.DataFrame) for x in dfs):
+        return _overlay_dataframe(dfs)  # type: ignore[arg-type]
+    elif all(isinstance(x, pd.Series) for x in dfs):
+        return _overlay_series(dfs)  # type: ignore[arg-type]
+    else:
+        raise TypeError("input must be all DataFrames or all Series")
+
+
+def _overlay_dataframe(*dfs: pd.DataFrame) -> pd.DataFrame:
+    output = pd.DataFrame(dtype=float)
     for df in dfs:
         output = output.combine_first(df)
+    return output
 
+
+def _overlay_series(*dfs: pd.Series[Any]) -> pd.Series[float]:
+    output = pd.Series(dtype=float)
+    for df in dfs:
+        output = output.combine_first(df)
     return output

@@ -39,6 +39,12 @@ class Formula:
     def baseyear(self):
         return self._baseyear
 
+    @baseyear.setter
+    def baseyear(self, baseyear):
+        if isinstance(baseyear, int) is False:
+            raise TypeError("baseyear must be int")
+        self._baseyear = baseyear
+
     @property
     def what(self):
         return None
@@ -48,18 +54,12 @@ class Formula:
         return self._calls_on
 
     @property
-    def indicators(self):
+    def indicators(self) -> list[str]:
         return []
 
     @property
     def weights(self):
         return []
-
-    @baseyear.setter
-    def baseyear(self, baseyear):
-        if isinstance(baseyear, int) is False:
-            raise TypeError("baseyear must be int")
-        self._baseyear = baseyear
 
     def __repr__(self):
         return f"Formula: {self.name} = {self.what}"
@@ -130,11 +130,11 @@ class Formula:
             raise ValueError("baseyear is None")
 
         if test_dfs:
-            self._check_df("annual_df", annual_df, self.baseyear, "a")
+            self._check_df("annual_df", annual_df, self.baseyear, "YE")
             self._check_df("indicators_df", indicators_df, self.baseyear)
 
             if weights_df is not None:
-                self._check_df("weights_df", weights_df, self.baseyear, "a")
+                self._check_df("weights_df", weights_df, self.baseyear, "YE")
 
             if correction_df is not None:
                 self._check_df(

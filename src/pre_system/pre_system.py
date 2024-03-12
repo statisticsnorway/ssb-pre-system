@@ -4,6 +4,7 @@
 ##################################
 
 import datetime
+from typing import Any
 
 import pandas as pd
 
@@ -11,64 +12,52 @@ from .formula import Formula
 
 
 class PreSystem:
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
         self._name = name
-        self._baseyear = None
-        self._formulae = {}
-        self._annuals_df = None
-        self._indicators_df = None
-        self._weights_df = None
-        self._corrections_df = None
-        self._annual_df_updated = None
-        self._indicator_df_updated = None
-        self._weight_df_updated = None
-        self._correction_df_updated = None
+        self._baseyear: int | None = None
+        self._formulae: dict[str, Formula] = {}
+        self._annuals_df: pd.DataFrame | None = None
+        self._indicators_df: pd.DataFrame | None = None
+        self._weights_df: pd.DataFrame | None = None
+        self._corrections_df: pd.DataFrame | None = None
+        self._annual_df_updated: str | None = None
+        self._indicator_df_updated: str | None = None
+        self._weight_df_updated: str | None = None
+        self._correction_df_updated: str | None = None
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def baseyear(self):
+    def baseyear(self) -> int | None:
         return self._baseyear
 
-    @property
-    def formulae(self):
-        return self._formulae
-
-    @property
-    def indicators(self):
-        indicator_set = set()
-        for _, formula in self.formulae.items():
-            indicator_set = indicator_set.union(formula.indicators)
-        return list(indicator_set)
-
-    @property
-    def annuals_df(self):
-        return self._annuals_df
-
-    @property
-    def indicators_df(self):
-        return self._indicators_df
-
-    @property
-    def weights_df(self):
-        return self._weights_df
-
-    @property
-    def corrections_df(self):
-        return self._corrections_df
-
     @baseyear.setter
-    def baseyear(self, baseyear):
+    def baseyear(self, baseyear: int) -> None:
         if isinstance(baseyear, int) is False:
             raise TypeError("baseyear must be int")
         for _, formula in self.formulae.items():
             formula.baseyear = baseyear
         self._baseyear = baseyear
 
+    @property
+    def formulae(self) -> dict[str, Formula]:
+        return self._formulae
+
+    @property
+    def indicators(self) -> list[str]:
+        indicator_set: set[str] = set()
+        for _, formula in self.formulae.items():
+            indicator_set = indicator_set.union(formula.indicators)
+        return list(indicator_set)
+
+    @property
+    def annuals_df(self) -> pd.DataFrame | None:
+        return self._annuals_df
+
     @annuals_df.setter
-    def annuals_df(self, annuals_df):
+    def annuals_df(self, annuals_df: pd.DataFrame) -> None:
         """Set the DataFrame containing annual data.
 
         Parameters
@@ -85,16 +74,23 @@ class PreSystem:
         """
         if isinstance(annuals_df, pd.DataFrame) is False:
             raise TypeError("annual_df must be a Pandas.DataFrame")
-        if isinstance(annuals_df.index, pd.PeriodIndex) is False:
+        if isinstance(annuals_df.index, pd.PeriodIndex):
+            if annuals_df.index.freq != "a":
+                raise AttributeError("annual_df must have annual frequency")
+            self._check_missing(annuals_df)
+            self._annuals_df = annuals_df
+            self._annual_df_updated = datetime.datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+        else:
             raise AttributeError("annual_df.index must be Pandas.PeriodIndex")
-        if annuals_df.index.freq != "a":
-            raise AttributeError("annual_df must have annual frequency")
-        self._check_missing(annuals_df)
-        self._annuals_df = annuals_df
-        self._annual_df_updated = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    @property
+    def indicators_df(self) -> pd.DataFrame | None:
+        return self._indicators_df
 
     @indicators_df.setter
-    def indicators_df(self, indicators_df):
+    def indicators_df(self, indicators_df: pd.DataFrame) -> None:
         """Set the DataFrame containing indicator data.
 
         Parameters
@@ -119,8 +115,12 @@ class PreSystem:
             "%Y-%m-%d %H:%M:%S"
         )
 
+    @property
+    def weights_df(self) -> pd.DataFrame | None:
+        return self._weights_df
+
     @weights_df.setter
-    def weights_df(self, weights_df):
+    def weights_df(self, weights_df: pd.DataFrame) -> None:
         """Set the DataFrame containing weight data.
 
         Parameters
@@ -137,16 +137,23 @@ class PreSystem:
         """
         if isinstance(weights_df, pd.DataFrame) is False:
             raise TypeError("weight_df must be a Pandas.DataFrame")
-        if isinstance(weights_df.index, pd.PeriodIndex) is False:
+        if isinstance(weights_df.index, pd.PeriodIndex):
+            if weights_df.index.freq != "a":
+                raise AttributeError("weights_df must have annual frequency")
+            self._check_missing(weights_df)
+            self._weights_df = weights_df
+            self._weight_df_updated = datetime.datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+        else:
             raise AttributeError("weights_df.index must be Pandas.PeriodIndex")
-        if weights_df.index.freq != "a":
-            raise AttributeError("weights_df must have annual frequency")
-        self._check_missing(weights_df)
-        self._weights_df = weights_df
-        self._weight_df_updated = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    @property
+    def corrections_df(self) -> pd.DataFrame | None:
+        return self._corrections_df
 
     @corrections_df.setter
-    def corrections_df(self, corrections_df):
+    def corrections_df(self, corrections_df: pd.DataFrame) -> None:
         """Set the DataFrame containing correction data.
 
         Parameters
@@ -163,26 +170,27 @@ class PreSystem:
         """
         if isinstance(corrections_df, pd.DataFrame) is False:
             raise TypeError("correction_df must be a Pandas.DataFrame")
-        if isinstance(corrections_df.index, pd.PeriodIndex) is False:
+        if isinstance(corrections_df.index, pd.PeriodIndex):
+            self._check_missing(corrections_df)
+            self._corrections_df = corrections_df
+            self._correction_df_updated = datetime.datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+        else:
             raise AttributeError("correction_df.index must be Pandas.PeriodIndex")
-        self._check_missing(corrections_df)
-        self._corrections_df = corrections_df
-        self._correction_df_updated = datetime.datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
 
     @staticmethod
-    def _check_missing(df):
+    def _check_missing(df: pd.DataFrame) -> None:
         count_missing = df.isna().sum()
         if count_missing.sum() > 0:
             print(
                 f'WARNING: there are NaN values in {",".join([y for x, y in zip(count_missing, count_missing.index) if x > 0])}'
             )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"PreSystem: {self.name}"
 
-    def info(self):
+    def info(self) -> None:
         print(
             "\n".join(
                 [
@@ -199,7 +207,7 @@ class PreSystem:
             )
         )
 
-    def add_formula(self, formula):
+    def add_formula(self, formula: Formula) -> None:
         """Add a formula to the PreSystem.
 
         Parameters
@@ -232,12 +240,12 @@ class PreSystem:
                     f"Formula name {formula.name} already exists and points to a different formula"
                 )
 
-    def formula(self, name):
+    def formula(self, name: str) -> Formula | None:
         """Get a formula from the PreSystem.
 
         Parameters
         ----------
-        formula_name : str
+        name : str
             The name of the formula to retrieve.
 
         Returns:
@@ -264,24 +272,31 @@ class PreSystem:
                     f"baseyear for formula {formula.name} is not {self.baseyear}. Try setting baseyear"
                 )
 
-        evaluated = {}
-        for name, formula in self.formulae.items():
-            evaluated[name] = formula.evaluate(
-                self.annuals_df,
-                self.indicators_df,
-                self.weights_df,
-                self.corrections_df,
-                test_dfs=False,
-            )
+        if (
+            self.annuals_df is not None
+            and self.indicators_df is not None
+            and self.weights_df is not None
+            and self.corrections_df is not None
+        ):
+            evaluated = {}
+            for name, formula in self.formulae.items():
+                evaluated[name] = formula.evaluate(
+                    self.annuals_df,
+                    self.indicators_df,
+                    self.weights_df,
+                    self.corrections_df,
+                    test_dfs=False,
+                )
+            return pd.concat(evaluated, axis=1)
+        else:
+            raise ValueError("At least one dataframe is None.")
 
-        return pd.concat(evaluated, axis=1)
-
-    def evaluate_formula(self, name: str) -> pd.Series:
+    def evaluate_formula(self, name: str) -> pd.Series[Any]:
         """Evaluate a specific formula using the provided data.
 
         Parameters
         ----------
-        formula_name : str
+        name : str
             The name of the formula to evaluate.
 
         Returns:
@@ -336,7 +351,7 @@ class PreSystem:
 
         return pd.concat(evaluated, axis=1)
 
-    def _check_dfs(self):
+    def _check_dfs(self) -> None:
         if (self.baseyear in self.annuals_df.index.year) is False:
             raise IndexError(f"baseyear {self.baseyear} is out of range for annuals_df")
         if (self.baseyear in self.indicators_df.index.year) is False:
