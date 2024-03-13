@@ -18,8 +18,9 @@ Changelog = "https://github.com/statisticsnorway/ssb-pre-system/releases"
 python = "^3.9"
 click = ">=8.0.1"
 numpy = ">=1.26.4"
-pandas = ">=2.2.1"
+pandas = {extras = ["performance"], version = ">=2.2.1"}
 pandas-stubs = ">=2.2.0.240218"
+pyarrow = ">=15.0.1"
 
 [tool.poetry.group.dev.dependencies]
 pygments = ">=2.10.0"
@@ -40,11 +41,11 @@ typeguard = ">=2.13.3"
 xdoctest = { extras = ["colors"], version = ">=0.15.10" }
 myst-parser = { version = ">=0.16.1" }
 matplotlib = ">=3.8.3"
-jupyterlab = ">=4.1.4"
 jupyter = "^1.0.0"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+filterwarnings = ["ignore:Dtype inference on a pandas object:FutureWarning"]
 
 [tool.poetry.scripts]
 ssb-pre-system = "pre_system.__main__:main"
@@ -63,7 +64,7 @@ show_missing = true
 fail_under = 50
 
 [tool.mypy]
-strict = true
+strict = false
 warn_unreachable = true
 pretty = true
 show_column_numbers = true

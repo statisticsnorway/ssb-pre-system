@@ -4,7 +4,6 @@
 ##################################
 
 import datetime
-from typing import Any
 
 import pandas as pd
 
@@ -291,7 +290,7 @@ class PreSystem:
         else:
             raise ValueError("At least one dataframe is None.")
 
-    def evaluate_formula(self, name: str) -> pd.Series[Any]:
+    def evaluate_formula(self, name: str) -> pd.Series:
         """Evaluate a specific formula using the provided data.
 
         Parameters
