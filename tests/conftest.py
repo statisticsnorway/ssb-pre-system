@@ -83,3 +83,12 @@ def weight_df(generator) -> pd.DataFrame:
         weight_df[["w3", "w4"]].sum(axis=1), axis=0
     )
     return weight_df
+
+
+@pytest.fixture
+def quarterly_df(generator) -> pd.DataFrame:
+    return pd.DataFrame(
+        np.exp(0.02 + generator.normal(0, 0.01, (16, 3)).cumsum(axis=0)),
+        columns=[f"x{i}" for i in range(3)],
+        index=pd.period_range(start="2019q1", periods=16, freq="Q"),
+    )

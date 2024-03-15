@@ -3,6 +3,8 @@
 # mkh@ssb.no                     #
 ##################################
 
+from __future__ import annotations
+
 import datetime
 
 import pandas as pd
@@ -271,24 +273,17 @@ class PreSystem:
                     f"baseyear for formula {formula.name} is not {self.baseyear}. Try setting baseyear"
                 )
 
-        if (
-            self.annuals_df is not None
-            and self.indicators_df is not None
-            and self.weights_df is not None
-            and self.corrections_df is not None
-        ):
-            evaluated = {}
-            for name, formula in self.formulae.items():
-                evaluated[name] = formula.evaluate(
-                    self.annuals_df,
-                    self.indicators_df,
-                    self.weights_df,
-                    self.corrections_df,
-                    test_dfs=False,
-                )
-            return pd.concat(evaluated, axis=1)
-        else:
-            raise ValueError("At least one dataframe is None.")
+        evaluated = {}
+        for name, formula in self.formulae.items():
+            evaluated[name] = formula.evaluate(
+                self.annuals_df,
+                self.indicators_df,
+                self.weights_df,
+                self.corrections_df,
+                test_dfs=False,
+            )
+
+        return pd.concat(evaluated, axis=1)
 
     def evaluate_formula(self, name: str) -> pd.Series:
         """Evaluate a specific formula using the provided data.

@@ -15,6 +15,17 @@ def test_formula_info(capsys, formulas) -> None:
     assert lines[1] == " xa1 = xa*<date None>*(x0+x1+x2)/sum((x0+x1+x2)<date None>)"
     assert lines[2] == " xa2 = xa*<date None>*(x0+x1)/sum((x0+x1)<date None>)"
 
+    formulas.vxa.info()
+    captured = capsys.readouterr()
+    lines = captured.out.split("\n")
+    assert (
+        lines[0]
+        == "vxa = sum(xa<date None>)*(xa/(w0*p0+w1*p1+w2*p2))/sum(xa/(w0*p0+w1*p1+w2*p2)<date None>)"
+    )
+    assert lines[1] == " xa = xa1 if year>=2017 else xa2"
+    assert lines[2] == "  xa1 = xa*<date None>*(x0+x1+x2)/sum((x0+x1+x2)<date None>)"
+    assert lines[3] == "  xa2 = xa*<date None>*(x0+x1)/sum((x0+x1)<date None>)"
+
 
 def test_formula_print(capsys, formulas) -> None:
     print(formulas.xa)
@@ -56,7 +67,7 @@ def test_formula_evaluate(formulas, annual_df, indicator_df, weight_df) -> None:
     result_x = formulas.x.evaluate(annual_df, indicator_df, weight_df)
     result_vx = formulas.vx.evaluate(annual_df, indicator_df, weight_df)
 
-    write_new_facit_file = True
+    write_new_facit_file = False
     file_x = Path(__file__).parent / "testdata" / "facit_formula_evaluate_x.parquet"
     file_vx = Path(__file__).parent / "testdata" / "facit_formula_evaluate_vx.parquet"
     if write_new_facit_file:

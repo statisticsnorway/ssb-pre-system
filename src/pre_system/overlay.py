@@ -2,12 +2,13 @@
 # Author: Magnus Kvåle Helliesen #
 # mkh@ssb.no                     #
 ##################################
-from typing import Any
+
+from __future__ import annotations
 
 import pandas as pd
 
 
-def overlay(*dfs: pd.DataFrame | pd.Series[Any]) -> pd.DataFrame | pd.Series[float]:
+def overlay(*dfs: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.Series:
     """Combines multiple Pandas DataFrames or Series by overlaying their values based on index alignment.
 
     Parameters:
@@ -50,14 +51,14 @@ def overlay(*dfs: pd.DataFrame | pd.Series[Any]) -> pd.DataFrame | pd.Series[flo
         raise TypeError("input must be all DataFrames or all Series")
 
 
-def _overlay_dataframe(*dfs: pd.DataFrame) -> pd.DataFrame:
+def _overlay_dataframe(dfs: tuple[pd.DataFrame, ...]) -> pd.DataFrame:
     output = pd.DataFrame(dtype=float)
     for df in dfs:
         output = output.combine_first(df)
     return output
 
 
-def _overlay_series(*dfs: pd.Series[Any]) -> pd.Series[float]:
+def _overlay_series(dfs: tuple[pd.Series, ...]) -> pd.Series:
     output = pd.Series(dtype=float)
     for df in dfs:
         output = output.combine_first(df)
