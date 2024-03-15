@@ -74,7 +74,7 @@ class PreSystem:
         if isinstance(annuals_df, pd.DataFrame) is False:
             raise TypeError("annual_df must be a Pandas.DataFrame")
         if isinstance(annuals_df.index, pd.PeriodIndex):
-            if annuals_df.index.freq != "a":
+            if annuals_df.index.freq != "YE":
                 raise AttributeError("annual_df must have annual frequency")
             self._check_missing(annuals_df)
             self._annuals_df = annuals_df
@@ -137,7 +137,7 @@ class PreSystem:
         if isinstance(weights_df, pd.DataFrame) is False:
             raise TypeError("weight_df must be a Pandas.DataFrame")
         if isinstance(weights_df.index, pd.PeriodIndex):
-            if weights_df.index.freq != "a":
+            if weights_df.index.freq != "YE":
                 raise AttributeError("weights_df must have annual frequency")
             self._check_missing(weights_df)
             self._weights_df = weights_df
