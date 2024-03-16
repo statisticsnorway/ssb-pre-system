@@ -10,9 +10,12 @@ import pandas as pd
 
 
 class Formula:
-    _baseyear = None
+    # TODO: Check why this class uses _baseyear as both a class variable and
+    # an instance variable. The instance variable hides the class variable and
+    # causes confusion. Check if one of them can be renamed.
+    _baseyear: int | None = None
 
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
         """Initialize a Formula instance.
 
         Parameters
@@ -25,28 +28,28 @@ class Formula:
         TypeError
             If `name` is not a string.
         """
-        if isinstance(name, str) is False:
+        if not isinstance(name, str):
             raise TypeError("name must be str")
         self._name = name.lower()
-        self._baseyear = None
+        self._baseyear: int | None = None
         self._calls_on = None
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def baseyear(self):
+    def baseyear(self) -> int | None:
         return self._baseyear
 
     @baseyear.setter
-    def baseyear(self, baseyear):
-        if isinstance(baseyear, int) is False:
+    def baseyear(self, baseyear: int) -> None:
+        if not isinstance(baseyear, int):
             raise TypeError("baseyear must be int")
         self._baseyear = baseyear
 
     @property
-    def what(self):
+    def what(self) -> str | None:
         return None
 
     @property
@@ -147,15 +150,15 @@ class Formula:
     # Method that checks that conditions are met for DataFrame to be valid input
     @staticmethod
     def _check_df(df_name, df, baseyear, frequency=None):
-        if isinstance(df, pd.DataFrame) is False:
+        if not isinstance(df, pd.DataFrame):
             raise TypeError(f"{df_name} must be a Pandas.DataFrame")
-        if isinstance(df.index, pd.PeriodIndex) is False:
+        if not isinstance(df.index, pd.PeriodIndex):
             raise AttributeError(f"{df_name}.index must be Pandas.PeriodIndex")
         if frequency and df.index.freq != frequency:
             raise AttributeError(f"{df_name} must have frequency {frequency}")
-        if (baseyear in df.index.year) is False:
+        if baseyear not in df.index.year:
             raise IndexError(f"baseyear {baseyear} is out of range for annual_df")
-        if all(np.issubdtype(df[x].dtype, np.number) for x in df.columns) is False:
+        if not all(np.issubdtype(df[x].dtype, np.number) for x in df.columns):
             raise TypeError(f"All columns in {df_name} must be numeric")
 
 
@@ -191,24 +194,23 @@ class Indicator(Formula):
             If `weight_names` is provided and has a different length than `indicator_names`.
         """
         super().__init__(name)
-        if isinstance(annual, str) is False:
+        if not isinstance(annual, str):
             raise TypeError("annual must be str")
-        if isinstance(indicators, list) is False:
+        if not isinstance(indicators, list):
             raise TypeError("indicator_names must be a list")
-        if all(isinstance(x, str) for x in indicators) is False:
+        if not all(isinstance(x, str) for x in indicators):
             raise TypeError("indicator_names must containt str")
         if weights and len(weights) != len(indicators):
             raise IndexError("weight_names must have same length as indicator_names")
+        if weights and not all(isinstance(x, type(weights[0])) for x in weights):
+            raise TypeError("all weights must be of same type")
+        if aggregation.lower() not in ["sum", "avg"]:
+            raise NameError("aggregation must be sum or avg")
         self._annual = annual
         self._indicators = [x.strip() for x in indicators]
-        if weights:
-            if all(isinstance(x, type(weights[0])) for x in weights) is False:
-                raise TypeError("all weights must be of same type")
         self._weights = weights
         self._correction = correction
         self._normalise = normalise
-        if aggregation.lower() not in ["sum", "avg"]:
-            raise NameError("aggregation must be sum or avg")
         self._aggregation = aggregation.lower()
         self._calls_on = {}
 
@@ -295,10 +297,10 @@ class Indicator(Formula):
             annual_df, indicators_df, weights_df, correction_df, test_dfs=test_dfs
         )
 
-        if (self._annual in annual_df.columns) is False:
+        if self._annual not in annual_df.columns:
             raise NameError(f"Cannot find {self._annual} in annual_df")
 
-        if all(x in indicators_df.columns for x in self._indicators) is False:
+        if any(x not in indicators_df.columns for x in self._indicators):
             missing = [x for x in self._indicators if x not in indicators_df.columns]
             raise NameError(f'Cannot find {",".join(missing)} in indicators_df')
 
@@ -312,7 +314,7 @@ class Indicator(Formula):
             if all(isinstance(x, str) for x in self._weights):
                 if weights_df is None:
                     raise NameError(f"{self.name} expects weights_df")
-                if all(x in weights_df.columns for x in self._weights) is False:
+                if any(x not in weights_df.columns for x in self._weights):
                     missing = [x for x in self._weights if x not in weights_df.columns]
                     raise NameError(f'Cannot find {",".join(missing)} in weights_df')
 
@@ -335,7 +337,7 @@ class Indicator(Formula):
         if self._correction:
             if correction_df is None:
                 raise NameError(f"{self.name} expects correction_df")
-            if (self._correction in correction_df.columns) is False:
+            if self._correction not in correction_df.columns:
                 raise NameError(f"{self._correction} is not in correction_df")
             corrected_indicators = (
                 weighted_indicators * correction_df.loc[:, self._correction]
@@ -391,19 +393,18 @@ class FDeflate(Formula):
             If `weight_names` is provided and has a different length than `indicator_names`.
         """
         super().__init__(name)
-        if isinstance(formula, Formula) is False:
+        if not isinstance(formula, Formula):
             raise TypeError("formula must be of type Formula")
         if weights and len(weights) != len(indicators):
             raise IndexError("weight_names must have same length as indicator_names")
+        if weights and not all(isinstance(x, type(weights[0])) for x in weights):
+            raise TypeError("all weights must be of same type")
         self._formula = formula
         self._indicators = [x.strip() for x in indicators]
-        if weights:
-            if all(isinstance(x, type(weights[0])) for x in weights) is False:
-                raise TypeError("all weights must be of same type")
         self._weights = weights
         self._correction = correction
         self._normalise = normalise
-        self._calls_on = {formula.name: formula}
+        self._calls_on = {formula.name: formula}  # dict[str, Formula] = {}
 
     @property
     def indicators(self):
@@ -458,7 +459,7 @@ class FDeflate(Formula):
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs, test_dfs=test_dfs)
 
-        if all(x in indicators_df.columns for x in self._indicators) is False:
+        if any(x not in indicators_df.columns for x in self._indicators):
             raise NameError(
                 f'All of {",".join(self._indicators)} is not in indicators_df'
             )
@@ -500,7 +501,7 @@ class FDeflate(Formula):
         if self._correction:
             if correction_df is None:
                 raise NameError(f"{self.name} expects correction_df")
-            if (self._correction in correction_df.columns) is False:
+            if self._correction not in correction_df.columns:
                 raise NameError(f"{self._correction} is not in correction_df")
             formula_corrected = formula_divided * correction_df.loc[:, self._correction]
         else:
@@ -548,15 +549,14 @@ class FInflate(Formula):
             If `weight_names` is provided and has a different length than `indicator_names`.
         """
         super().__init__(name)
-        if isinstance(formula, Formula) is False:
+        if not isinstance(formula, Formula):
             raise TypeError("formula must be of type Formula")
         if weights and len(weights) != len(indicators):
             raise IndexError("weight_names must have same length as indicator_names")
+        if weights and all(isinstance(x, type(weights[0])) for x in weights) is False:
+            raise TypeError("all weights must be of same type")
         self._formula = formula
         self._indicators = [x.strip() for x in indicators]
-        if weights:
-            if all(isinstance(x, type(weights[0])) for x in weights) is False:
-                raise TypeError("all weights must be of same type")
         self._weights = weights
         self._correction = correction
         self._normalise = normalise
@@ -615,7 +615,7 @@ class FInflate(Formula):
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs, test_dfs=test_dfs)
 
-        if all(x in indicators_df.columns for x in self._indicators) is False:
+        if any(x not in indicators_df.columns for x in self._indicators):
             raise NameError(
                 f'All of {",".join(self._indicators)} is not in indicators_df'
             )
@@ -689,7 +689,7 @@ class FSum(Formula):
             If any of the *formulae is not of type Formula.
         """
         super().__init__(name)
-        if all(isinstance(x, Formula) for x in formulae) is False:
+        if not all(isinstance(x, Formula) for x in formulae):
             raise TypeError("*formulae must be of type Formula")
         self._formulae = formulae
         self._calls_on = {x.name: x for x in formulae}
@@ -772,12 +772,11 @@ class FSumProd(Formula):
             If any of the *formulae is not of type Formula.
         """
         super().__init__(name)
-        if all(isinstance(x, Formula) for x in formulae) is False:
+        if not all(isinstance(x, Formula) for x in formulae):
             raise TypeError("*formulae must be of type Formula")
+        if weights and all(isinstance(x, type(weights[0])) for x in weights) is False:
+            raise TypeError("all weights must be of same type")
         self._formulae = formulae
-        if weights:
-            if all(isinstance(x, type(weights[0])) for x in weights) is False:
-                raise TypeError("all weights must be of same type")
         self._weights = weights
         self._calls_on = {x.name: x for x in formulae}
 
@@ -845,7 +844,7 @@ class FSumProd(Formula):
         if all(isinstance(x, str) for x in self._weights):
             if weights_df is None:
                 raise NameError(f"{self.name} expects weights_df")
-            if all(x in weights_df.columns for x in self._weights) is False:
+            if any(x not in weights_df.columns for x in self._weights):
                 missing = [x for x in self._weights if x not in weights_df.columns]
                 raise NameError(f'Cannot find {",".join(missing)} in weights_df')
             weight_vector = (
@@ -868,7 +867,7 @@ class FSumProd(Formula):
 class FMult(Formula):
     def __init__(self, name, formula1: Formula, formula2: Formula):
         super().__init__(name)
-        if isinstance(formula1, Formula) and isinstance(formula1, Formula) is False:
+        if not (isinstance(formula1, Formula) and isinstance(formula2, Formula)):
             raise TypeError("formula1 and formula2 must be of type Formula")
         self._formula1 = formula1
         self._formula2 = formula2
@@ -940,7 +939,7 @@ class FMult(Formula):
 class FDiv(Formula):
     def __init__(self, name, formula1: Formula, formula2: Formula):
         super().__init__(name)
-        if isinstance(formula1, Formula) and isinstance(formula1, Formula) is False:
+        if not (isinstance(formula1, Formula) and isinstance(formula2, Formula)):
             raise TypeError("formula1 and formula2 must be of type Formula")
         self._formula1 = formula1
         self._formula2 = formula2
@@ -1026,7 +1025,7 @@ class MultCorr(Formula):
             If formula is not of type Formula.
         """
         super().__init__(formula.name)
-        if isinstance(formula, Formula) is False:
+        if not isinstance(formula, Formula):
             raise TypeError("formula must be of type Formula")
         self._formula = formula
         self._correction_name = correction_name
@@ -1038,7 +1037,7 @@ class MultCorr(Formula):
 
     @baseyear.setter
     def baseyear(self, baseyear):
-        if isinstance(baseyear, int) is False:
+        if not isinstance(baseyear, int):
             raise TypeError("baseyear must be int")
         self._baseyear = baseyear
         # Pass baseyear to formula that goes into correction
@@ -1125,7 +1124,7 @@ class AddCorr(Formula):
             If formula is not of type Formula.
         """
         super().__init__(formula.name)
-        if isinstance(formula, Formula) is False:
+        if not isinstance(formula, Formula):
             raise TypeError("formula must be of type Formula")
         self._formula = formula
         self._correction_name = correction_name
@@ -1137,7 +1136,7 @@ class AddCorr(Formula):
 
     @baseyear.setter
     def baseyear(self, baseyear):
-        if isinstance(baseyear, int) is False:
+        if not isinstance(baseyear, int):
             raise TypeError("baseyear must be int")
         self._baseyear = baseyear
         # Pass baseyear to formula that goes into correction
@@ -1226,9 +1225,9 @@ class FJoin(Formula):
             If from year is not of type str.
         """
         super().__init__(name)
-        if isinstance(formula1, Formula) and isinstance(formula0, Formula) is False:
+        if not (isinstance(formula1, Formula) and isinstance(formula0, Formula)):
             raise TypeError("formula1 and formula0 must be of type Formula")
-        if isinstance(from_year, int) is False:
+        if not isinstance(from_year, int):
             raise TypeError("from_year must must be of type int")
         self._formula1 = formula1
         self._formula0 = formula0

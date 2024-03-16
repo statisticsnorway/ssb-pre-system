@@ -36,7 +36,7 @@ class PreSystem:
 
     @baseyear.setter
     def baseyear(self, baseyear: int) -> None:
-        if isinstance(baseyear, int) is False:
+        if not isinstance(baseyear, int):
             raise TypeError("baseyear must be int")
         for _, formula in self.formulae.items():
             formula.baseyear = baseyear
@@ -73,7 +73,7 @@ class PreSystem:
         AttributeError
             If the index of the DataFrame is not a PeriodIndex or has incorrect frequency.
         """
-        if isinstance(annuals_df, pd.DataFrame) is False:
+        if not isinstance(annuals_df, pd.DataFrame):
             raise TypeError("annual_df must be a Pandas.DataFrame")
         if isinstance(annuals_df.index, pd.PeriodIndex):
             if annuals_df.index.freq != "YE":
@@ -106,9 +106,9 @@ class PreSystem:
         AttributeError
             If the index of the DataFrame is not a PeriodIndex.
         """
-        if isinstance(indicators_df, pd.DataFrame) is False:
+        if not isinstance(indicators_df, pd.DataFrame):
             raise TypeError("indicator_df must be a Pandas.DataFrame")
-        if isinstance(indicators_df.index, pd.PeriodIndex) is False:
+        if not isinstance(indicators_df.index, pd.PeriodIndex):
             raise AttributeError("indicators_df.index must be Pandas.PeriodIndex")
         self._check_missing(indicators_df)
         self._indicators_df = indicators_df
@@ -136,7 +136,7 @@ class PreSystem:
         AttributeError
             If the index of the DataFrame is not a PeriodIndex or has incorrect frequency.
         """
-        if isinstance(weights_df, pd.DataFrame) is False:
+        if not isinstance(weights_df, pd.DataFrame):
             raise TypeError("weight_df must be a Pandas.DataFrame")
         if isinstance(weights_df.index, pd.PeriodIndex):
             if weights_df.index.freq != "YE":
@@ -169,7 +169,7 @@ class PreSystem:
         AttributeError
             If the index of the DataFrame is not a PeriodIndex.
         """
-        if isinstance(corrections_df, pd.DataFrame) is False:
+        if not isinstance(corrections_df, pd.DataFrame):
             raise TypeError("correction_df must be a Pandas.DataFrame")
         if isinstance(corrections_df.index, pd.PeriodIndex):
             self._check_missing(corrections_df)
@@ -225,21 +225,20 @@ class PreSystem:
         NameError
             If a formula with the same name already exists and points to a different formula.
         """
-        if isinstance(formula, Formula) is False:
+        if not isinstance(formula, Formula):
             raise TypeError("formula must be of type Formula")
 
-        if all(self.formulae.get(x) for x in formula.calls_on) is False:
+        if not all(self.formulae.get(x) for x in formula.calls_on):
             raise KeyError(f'Register all dependencies: {",".join(formula.calls_on)}')
 
         existing_formula = self.formulae.get(formula.name)
 
         if existing_formula is None:
             self.formulae[formula.name] = formula
-        else:
-            if formula is not existing_formula:
-                raise NameError(
-                    f"Formula name {formula.name} already exists and points to a different formula"
-                )
+        elif formula is not existing_formula:
+            raise NameError(
+                f"Formula name {formula.name} already exists and points to a different formula"
+            )
 
     def formula(self, name: str) -> Formula | None:
         """Get a formula from the PreSystem.
@@ -346,19 +345,19 @@ class PreSystem:
         return pd.concat(evaluated, axis=1)
 
     def _check_dfs(self) -> None:
-        if (self.baseyear in self.annuals_df.index.year) is False:
+        if self.baseyear not in self.annuals_df.index.year:
             raise IndexError(f"baseyear {self.baseyear} is out of range for annuals_df")
-        if (self.baseyear in self.indicators_df.index.year) is False:
+        if self.baseyear not in self.indicators_df.index.year:
             raise IndexError(
                 f"baseyear {self.baseyear} is out of range for indicators_df"
             )
-        if self.weights_df is not None:
-            if (self.baseyear in self.indicators_df.index.year) is False:
-                raise IndexError(
-                    f"baseyear {self.baseyear} is out of range for weights_df"
-                )
+        if (
+            self.weights_df is not None
+            and self.baseyear not in self.weights_df.index.year
+        ):
+            raise IndexError(f"baseyear {self.baseyear} is out of range for weights_df")
         if self.corrections_df is not None:
-            if (self.baseyear in self.corrections_df.index.year) is False:
+            if self.baseyear not in self.corrections_df.index.year:
                 raise IndexError(
                     f"baseyear {self.baseyear} is out of range for corrections_df"
                 )

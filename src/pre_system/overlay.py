@@ -37,10 +37,10 @@ def overlay(*dfs: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.Series:
     if len(dfs) == 1:
         return dfs[0]
 
-    if all(isinstance(x.index, pd.PeriodIndex) for x in dfs) is False:
+    if not all(isinstance(x.index, pd.PeriodIndex) for x in dfs):
         raise AttributeError("all DataFrames/Series must have have Pandas.PeriodIndex")
 
-    if all(x.index.freq == y.index.freq for x, y in zip(dfs[:-1], dfs[1:])) is False:  # type: ignore
+    if not all(x.index.freq == y.index.freq for x, y in zip(dfs[:-1], dfs[1:])):  # type: ignore
         raise AttributeError("all DataFrames/Series must have same freq")
 
     if all(isinstance(x, pd.DataFrame) for x in dfs):

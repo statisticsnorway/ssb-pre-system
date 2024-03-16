@@ -36,23 +36,20 @@ def convert(input_df: pd.DataFrame, to_freq: str) -> pd.DataFrame:
     - If the target frequency is lower or equal to the input frequency, the conversion is done using resampling only.
     - If the target frequency is higher, a first-order conditions matrix is constructed and solved to fill missing values.
     """
+    if not isinstance(input_df, pd.DataFrame):
+        raise TypeError("input_df must be a DataFrame")
+
+    if not isinstance(input_df.index, pd.PeriodIndex):
+        raise TypeError("DataFrame must have PeriodIndex")
+
+    if not all(np.issubdtype(input_df[x].dtype, np.number) for x in input_df.columns):  # type: ignore [arg-type]
+        raise TypeError("All columns in input_df must be numeric")
+
     freq_to_periods_per_year = {"a": 1, "q": 4, "m": 12}
     input_periods_per_year = freq_to_periods_per_year.get(
         input_df.index.freqstr[0].lower()
     )
     output_periods_per_year = freq_to_periods_per_year.get(to_freq.lower())
-
-    if isinstance(input_df, pd.DataFrame) is False:
-        raise TypeError("input_df must be a DataFrame")
-
-    if isinstance(input_df.index, pd.PeriodIndex) is False:
-        raise TypeError("DataFrame must have PeriodIndex")
-
-    if (
-        all(np.issubdtype(input_df[x].dtype, np.number) for x in input_df.columns)
-        is False
-    ):
-        raise TypeError("All columns in input_df must be numeric")
 
     if input_periods_per_year is None:
         raise ValueError(
@@ -111,20 +108,17 @@ def convert(input_df: pd.DataFrame, to_freq: str) -> pd.DataFrame:
 
 
 def convert_step(input_df: pd.DataFrame, to_freq: str) -> pd.DataFrame:
+    if not isinstance(input_df.index, pd.PeriodIndex):
+        raise TypeError("DataFrame must have PeriodIndex")
+
+    if not all(np.issubdtype(input_df[x].dtype, np.number) for x in input_df.columns):  # type: ignore [arg-type]
+        raise TypeError("All columns in input_df must be numeric")
+
     freq_to_periods_per_year = {"a": 1, "q": 4, "m": 12}
     input_periods_per_year = freq_to_periods_per_year.get(
         input_df.index.freqstr[0].lower()
     )
     output_periods_per_year = freq_to_periods_per_year.get(to_freq.lower())
-
-    if isinstance(input_df.index, pd.PeriodIndex) is False:
-        raise TypeError("DataFrame must have PeriodIndex")
-
-    if (
-        all(np.issubdtype(input_df[x].dtype, np.number) for x in input_df.columns)
-        is False
-    ):
-        raise TypeError("All columns in input_df must be numeric")
 
     if input_periods_per_year is None:
         raise ValueError(
