@@ -49,11 +49,11 @@ def test_formula_indicator_weights(formulas) -> None:
         ("p0", "w0"),
         ("p1", "w1"),
         ("p2", "w2"),
-        ("x0", 1),
-        ("x1", 1),
-        ("x2", 1),
-        ("x0", 1),
-        ("x1", 1),
+        ("x0", 1.0),
+        ("x1", 1.0),
+        ("x2", 1.0),
+        ("x0", 1.0),
+        ("x1", 1.0),
     ]
     assert str(result_with_trace) == str(facit_with_trace)
 
