@@ -94,7 +94,7 @@ class Formula:
         for _, val in self.calls_on.items():
             val.info(i + 1)
 
-    def indicators_weights(self, trace: bool = True) -> list[tuple[str, int]]:
+    def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
         return []
 
     def evaluate(
@@ -255,8 +255,10 @@ class Indicator(Formula):
 
         return f"{self._annual.lower()}*<date {self.baseyear}>*{fraction}"
 
-    def indicators_weights(self, trace: bool = True) -> list[tuple[str, int]]:
-        return [(x, y) for x, y in zip(self.indicators, self.weights)]
+    def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
+        if not all(isinstance(x, float) for x in self.weights):
+            raise TypeError("all weights must be of type float")
+        return [(x, y) for x, y in zip(self.indicators, self.weights)]  # type: ignore
 
     def evaluate(
         self,
@@ -300,6 +302,8 @@ class Indicator(Formula):
         super().evaluate(
             annual_df, indicators_df, weights_df, correction_df, test_dfs=test_dfs
         )
+        if not isinstance(annual_df.index, pd.PeriodIndex):
+            raise AttributeError("annual_df.index must be Pandas.PeriodIndex")
 
         if self._annual not in annual_df.columns:
             raise NameError(f"Cannot find {self._annual} in annual_df")
@@ -309,6 +313,9 @@ class Indicator(Formula):
             raise NameError(f'Cannot find {",".join(missing)} in indicators_df')
 
         indicator_matrix = indicators_df.loc[:, self._indicators]
+        if not isinstance(indicator_matrix.index, pd.PeriodIndex):
+            raise AttributeError(f"{indicator_matrix}.index must be Pandas.PeriodIndex")
+
         if self._normalise:
             indicator_matrix = indicator_matrix.div(
                 indicator_matrix.loc[indicator_matrix.index.year == self.baseyear].sum()
@@ -319,20 +326,19 @@ class Indicator(Formula):
                 if weights_df is None:
                     raise NameError(f"{self.name} expects weights_df")
                 if any(x not in weights_df.columns for x in self._weights):
-                    missing = [x for x in self._weights if x not in weights_df.columns]
+                    missing = [x for x in self._weights if x not in weights_df.columns]  # type: ignore
                     raise NameError(f'Cannot find {",".join(missing)} in weights_df')
-
-            indicator_matrix = indicator_matrix.to_numpy()
-
-            if all(isinstance(x, str) for x in self._weights):
+                if not isinstance(weights_df.index, pd.PeriodIndex):
+                    raise AttributeError("weights_df.index must be Pandas.PeriodIndex")
                 weight_vector = weights_df.loc[
                     weights_df.index.year == self.baseyear, self._weights
-                ].to_numpy()
+                ].to_numpy()  # type: ignore [misc]
+
             if all(isinstance(x, float) for x in self._weights):
                 weight_vector = np.array([self._weights])
 
             weighted_indicators = pd.Series(
-                indicator_matrix.dot(weight_vector.transpose())[:, 0],
+                indicator_matrix.to_numpy().dot(weight_vector.transpose())[:, 0],
                 index=indicators_df.index,
             )
         else:
@@ -361,7 +367,7 @@ class Indicator(Formula):
             ].mean()
         )
 
-        return evaluated_series
+        return evaluated_series  # type: ignore [no-any-return]
 
 
 class FDeflate(Formula):
@@ -447,10 +453,10 @@ class FDeflate(Formula):
 
         return f"sum({self._formula.name}<date {self.baseyear}>)*{fraction}"
 
-    def indicators_weights(self, trace: bool = True) -> list[tuple[str, int]]:
+    def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
         return [(x, y) for x, y in zip(self.indicators, self.weights)] + (
             self._formula.indicators_weights(trace=trace) if trace else []
-        )
+        )  # type: ignore [return-value]
 
     def evaluate(
         self,
@@ -469,6 +475,9 @@ class FDeflate(Formula):
             )
 
         indicator_matrix = indicators_df.loc[:, self._indicators]
+        if not isinstance(indicator_matrix.index, pd.PeriodIndex):
+            raise AttributeError(f"{indicator_matrix}.index must be Pandas.PeriodIndex")
+
         if self._normalise:
             indicator_matrix = indicator_matrix.div(
                 indicator_matrix.loc[indicator_matrix.index.year == self.baseyear].sum()
@@ -480,25 +489,26 @@ class FDeflate(Formula):
                     raise NameError(f"{self.name} expects weights_df")
                 if any(x not in weights_df.columns for x in self._weights):
                     missing = [x for x in self._weights if x not in weights_df.columns]
-                    raise NameError(f'Cannot find {",".join(missing)} in weights_df')
-
-            indicator_matrix = indicator_matrix.to_numpy()
-
-            if all(isinstance(x, str) for x in self._weights):
+                    raise NameError(f'Cannot find {",".join(missing)} in weights_df')  # type: ignore [arg-type]
+                if not isinstance(weights_df.index, pd.PeriodIndex):
+                    raise AttributeError("weights_df.index must be Pandas.PeriodIndex")
                 weight_vector = weights_df.loc[
                     weights_df.index.year == self.baseyear, self._weights
-                ].to_numpy()
+                ].to_numpy()  # type: ignore [misc]
+
             if all(isinstance(x, float) for x in self._weights):
                 weight_vector = np.array([self._weights])
 
             weighted_indicators = pd.Series(
-                indicator_matrix.dot(weight_vector.transpose())[:, 0],
+                indicator_matrix.to_numpy().dot(weight_vector.transpose())[:, 0],
                 index=indicators_df.index,
             )
         else:
             weighted_indicators = indicator_matrix.sum(axis=1, skipna=False)
 
         evaluated_formula = self._formula.evaluate(*all_dfs, test_dfs=test_dfs)
+        if not isinstance(evaluated_formula.index, pd.PeriodIndex):
+            raise AttributeError("evaluated_formula.index must be Pandas.PeriodIndex")
 
         formula_divided = evaluated_formula.div(weighted_indicators)
 
@@ -510,6 +520,8 @@ class FDeflate(Formula):
             formula_corrected = formula_divided * correction_df.loc[:, self._correction]
         else:
             formula_corrected = formula_divided
+        if not isinstance(formula_corrected.index, pd.PeriodIndex):
+            raise AttributeError("formula_corrected.index must be Pandas.PeriodIndex")
 
         evaluated_series = evaluated_formula.loc[
             evaluated_formula.index.year == self.baseyear
@@ -517,7 +529,7 @@ class FDeflate(Formula):
             formula_corrected.loc[formula_corrected.index.year == self.baseyear].sum()
         )
 
-        return evaluated_series
+        return evaluated_series  # type: ignore [no-any-return]
 
 
 class FInflate(Formula):
@@ -603,7 +615,7 @@ class FInflate(Formula):
 
         return f"sum({self._formula.name}<date {self.baseyear}>)*{fraction}"
 
-    def indicators_weights(self, trace: bool = True) -> list[tuple[str, int]]:
+    def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
         return [(x, y) for x, y in zip(self.indicators, self.weights)] + (
             self._formula.indicators_weights(trace=trace) if trace else []
         )
@@ -702,7 +714,7 @@ class FSum(Formula):
     def what(self) -> str:
         return "+".join([x.name for x in self._formulae])
 
-    def indicators_weights(self, trace: bool = True) -> list[tuple[str, int]]:
+    def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
         indicators_weights = []
         if trace:
             for formula in self._formulae:
@@ -793,7 +805,7 @@ class FSumProd(Formula):
             ]
         )
 
-    def indicators_weights(self, trace: bool = True) -> list[tuple[str, int]]:
+    def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
         indicators_weights = []
         if trace:
             for formula in self._formulae:
@@ -881,7 +893,7 @@ class FMult(Formula):
     def what(self) -> str:
         return f"{self._formula1.name}*{self._formula2.name}"
 
-    def indicators_weights(self, trace: bool = True) -> list[tuple[str, int]]:
+    def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
         indicators_weights = []
         if trace:
             for formula in [self._formula1, self._formula2]:
@@ -953,7 +965,7 @@ class FDiv(Formula):
     def what(self) -> str:
         return f"{self._formula1.name}/{self._formula2.name}"
 
-    def indicators_weights(self, trace: bool = True) -> list[tuple[str, int]]:
+    def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
         indicators_weights = []
         if trace:
             for formula in [self._formula1, self._formula2]:
@@ -1055,7 +1067,7 @@ class MultCorr(Formula):
             f"sum({self._correction_name}*({self._formula.what})<date {self.baseyear}>)"
         )
 
-    def indicators_weights(self, trace: bool = True) -> list[tuple[str, int]]:
+    def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
         return self._formula.indicators_weights(trace=trace) if trace else []
 
     def evaluate(
@@ -1150,7 +1162,7 @@ class AddCorr(Formula):
     def what(self) -> None:
         return f"{self._correction_name}+({self._formula.what})-avg({self._correction_name}<date {self.baseyear})"
 
-    def indicators_weights(self, trace: bool = True) -> list[tuple[str, int]]:
+    def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
         return self._formula.indicators_weights(trace=trace) if trace else []
 
     def evaluate(
@@ -1246,7 +1258,7 @@ class FJoin(Formula):
     def what(self) -> str:
         return f"{self._formula1.name} if year>={self._from_year} else {self._formula0.name}"
 
-    def indicators_weights(self, trace: bool = True) -> list[tuple[str, int]]:
+    def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
         indicators_weights = []
         if trace:
             for formula in [self._formula1, self._formula0]:
