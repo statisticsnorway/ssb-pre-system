@@ -2,11 +2,14 @@ from pathlib import Path
 
 import pandas as pd
 from pandas import testing as tm
+from pytest import CaptureFixture
 
 from pre_system.formula import Formula
+from tests.conftest import Formulas
+from tests.conftest import FSumProdFormulas
 
 
-def test_formula_info(capsys, formulas) -> None:
+def test_formula_info(capsys: CaptureFixture[str], formulas: Formulas) -> None:
     formulas.xa.info()
     captured = capsys.readouterr()
     lines = captured.out.split("\n")
@@ -27,7 +30,7 @@ def test_formula_info(capsys, formulas) -> None:
     assert lines[3] == "  xa2 = xa*<date None>*(x0+x1)/sum((x0+x1)<date None>)"
 
 
-def test_formula_print(capsys, formulas) -> None:
+def test_formula_print(capsys: CaptureFixture[str], formulas: Formulas) -> None:
     print(formulas.xa)
     print(formulas.xb)
     print(formulas.vxa)
@@ -43,7 +46,7 @@ def test_formula_print(capsys, formulas) -> None:
     assert lines[3] == "Formula: xy = xa+xb"
 
 
-def test_formula_indicator_weights(formulas) -> None:
+def test_formula_indicator_weights(formulas: Formulas) -> None:
     result_with_trace = formulas.vxa.indicators_weights()
     facit_with_trace = [
         ("p0", "w0"),
@@ -62,8 +65,13 @@ def test_formula_indicator_weights(formulas) -> None:
     assert str(result_without_trace) == str(facit_without_trace)
 
 
-def test_formula_evaluate(formulas, annual_df, indicator_df, weight_df) -> None:
-    Formula.baseyear = 2020
+def test_formula_evaluate(
+    formulas: Formulas,
+    annual_df: pd.DataFrame,
+    indicator_df: pd.DataFrame,
+    weight_df: pd.DataFrame,
+) -> None:
+    Formula.baseyear = 2020  # type: ignore
     result_x = formulas.x.evaluate(annual_df, indicator_df, weight_df)
     result_vx = formulas.vx.evaluate(annual_df, indicator_df, weight_df)
 
@@ -86,8 +94,28 @@ def test_formula_evaluate(formulas, annual_df, indicator_df, weight_df) -> None:
 
 
 def test_evaluate_fsumprod(
-    fsumprod_formulas, annual_df, indicator_df, weight_df
+    fsumprod_formulas: FSumProdFormulas,
+    annual_df: pd.DataFrame,
+    indicator_df: pd.DataFrame,
+    weight_df: pd.DataFrame,
 ) -> None:
-    Formula.baseyear = 2020
+    Formula.baseyear = 2020  # type: ignore
     result_pxf = fsumprod_formulas.pxf.evaluate(annual_df, indicator_df, weight_df)
     result_pxs = fsumprod_formulas.pxs.evaluate(annual_df, indicator_df, weight_df)
+
+    write_new_facit_file = False
+    file_f = Path(__file__).parent / "testdata" / "facit_fsumprod_evaluate_pxf.parquet"
+    file_s = Path(__file__).parent / "testdata" / "facit_fsumprod_evaluate_pxs.parquet"
+    if write_new_facit_file:
+        result_df_pxf = result_pxf.to_frame()
+        result_df_pxf.to_parquet(file_f)
+        result_df_pxs = result_pxs.to_frame()
+        result_df_pxs.to_parquet(file_s)
+
+    facit_df_pxf = pd.read_parquet(file_f)
+    facit_pxf = facit_df_pxf.iloc[:, 0]
+    tm.assert_series_equal(result_pxf, facit_pxf, check_names=False)
+
+    facit_df_pxs = pd.read_parquet(file_s)
+    facit_pxs = facit_df_pxs.iloc[:, 0]
+    tm.assert_series_equal(result_pxs, facit_pxs, check_names=False)

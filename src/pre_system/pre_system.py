@@ -265,6 +265,10 @@ class PreSystem:
             The evaluated formulas as a DataFrame.
         """
         self._check_dfs()
+        if self.annuals_df is None:
+            raise AttributeError("annuals_df can not be None when evaluating")
+        if self.indicators_df is None:
+            raise AttributeError("indicators_df can not be None when evaluating")
 
         for _, formula in self.formulae.items():
             if formula.baseyear != self.baseyear:
@@ -298,19 +302,22 @@ class PreSystem:
             The evaluated formula as a Series.
         """
         self._check_dfs()
+        if self.annuals_df is None:
+            raise AttributeError("annuals_df can not be None when evaluating")
+        if self.indicators_df is None:
+            raise AttributeError("indicators_df can not be None when evaluating")
 
         formula = self.formulae.get(name)
-
-        if formula is not None:
-            return self._formulae.get(name).evaluate(
-                self.annuals_df,
-                self.indicators_df,
-                self.weights_df,
-                self.corrections_df,
-                test_dfs=False,
-            )
-        else:
+        if not isinstance(formula, Formula):
             raise NameError(f"formula {name} is not in PreSystem {self.name}")
+
+        return formula.evaluate(
+            self.annuals_df,
+            self.indicators_df,
+            self.weights_df,
+            self.corrections_df,
+            test_dfs=False,
+        )
 
     def evaluate_formulae(self, *names: str) -> pd.DataFrame:
         """Evaluate specific formulae using the provided data.
@@ -326,37 +333,53 @@ class PreSystem:
             The evaluated formulae as a DataFrame.
         """
         self._check_dfs()
+        if self.annuals_df is None:
+            raise AttributeError("annuals_df can not be None when evaluating")
+        if self.indicators_df is None:
+            raise AttributeError("indicators_df can not be None when evaluating")
 
         evaluated = {}
         for name in names:
             formula = self.formulae.get(name)
-
-            if formula is not None:
-                evaluated[name] = self._formulae.get(name).evaluate(
-                    self.annuals_df,
-                    self.indicators_df,
-                    self.weights_df,
-                    self.corrections_df,
-                    test_dfs=False,
-                )
-            else:
+            if not isinstance(formula, Formula):
                 raise NameError(f"formula {name} is not in PreSystem {self.name}")
+
+            evaluated[name] = formula.evaluate(
+                self.annuals_df,
+                self.indicators_df,
+                self.weights_df,
+                self.corrections_df,
+                test_dfs=False,
+            )
 
         return pd.concat(evaluated, axis=1)
 
     def _check_dfs(self) -> None:
+        if self.annuals_df is None:
+            raise AttributeError("annuals_df can not be None when evaluating")
+        if not isinstance(self.annuals_df.index, pd.PeriodIndex):
+            raise AttributeError("annual_df.index must be Pandas.PeriodIndex")
+        if self.indicators_df is None:
+            raise AttributeError("indicators_df can not be None when evaluating")
+        if not isinstance(self.indicators_df.index, pd.PeriodIndex):
+            raise AttributeError("indicators_df.index must be Pandas.PeriodIndex")
+
         if self.baseyear not in self.annuals_df.index.year:
             raise IndexError(f"baseyear {self.baseyear} is out of range for annuals_df")
         if self.baseyear not in self.indicators_df.index.year:
             raise IndexError(
                 f"baseyear {self.baseyear} is out of range for indicators_df"
             )
-        if (
-            self.weights_df is not None
-            and self.baseyear not in self.weights_df.index.year
-        ):
-            raise IndexError(f"baseyear {self.baseyear} is out of range for weights_df")
+        if self.weights_df is not None:
+            if not isinstance(self.weights_df.index, pd.PeriodIndex):
+                raise AttributeError("weights_df.index must be Pandas.PeriodIndex")
+            if self.baseyear not in self.weights_df.index.year:
+                raise IndexError(
+                    f"baseyear {self.baseyear} is out of range for weights_df"
+                )
         if self.corrections_df is not None:
+            if not isinstance(self.corrections_df.index, pd.PeriodIndex):
+                raise AttributeError("corrections_df.index must be Pandas.PeriodIndex")
             if self.baseyear not in self.corrections_df.index.year:
                 raise IndexError(
                     f"baseyear {self.baseyear} is out of range for corrections_df"

@@ -7,7 +7,7 @@ from pre_system.convert import convert
 from pre_system.convert import convert_step
 
 
-def test_convert(quarterly_df) -> None:
+def test_convert(quarterly_df: pd.DataFrame) -> None:
     result_df = convert(quarterly_df, "M")
 
     write_new_facit_file = False
@@ -19,7 +19,7 @@ def test_convert(quarterly_df) -> None:
     tm.assert_frame_equal(result_df, facit_df)
 
 
-def test_convert_step(quarterly_df) -> None:
+def test_convert_step(quarterly_df: pd.DataFrame) -> None:
     result_df = convert_step(quarterly_df, "M")
 
     write_new_facit_file = False

@@ -111,11 +111,11 @@ class Formula:
         baseclass it returns a dummy pd.Series object which is not used.
 
         Args:
-        annual_df: The annual data used for evaluation.
-        indicators_df: The indicator data used for evaluation.
-        weights_df: The weight data used for evaluation. Optional and defaults to None.
-        correction_df: The correction data used for evaluation. Ootional and defaults to None.
-        test_dfs: If dataframes should be tested or not.
+            annual_df: The annual data used for evaluation.
+            indicators_df: The indicator data used for evaluation.
+            weights_df: The weight data used for evaluation. Optional and defaults to None.
+            correction_df: The correction data used for evaluation. Ootional and defaults to None.
+            test_dfs: If dataframes should be tested or not.
 
         Returns:
             A dummy pd.Series object. The return value is only valid for subclasses.
@@ -123,10 +123,8 @@ class Formula:
         Raises:
             ValueError: If the base year is not set or is out of range for the provided
                 data.
-            TypeError: If any of the input data is not a Pandas DataFrame.
             AttributeError: If the index of any input DataFrame is not a Pandas
                 PeriodIndex or if the frequency is incorrect.
-            IndexError: If the base year is out of range for any input DataFrame.
         """
         if self.baseyear is None:
             raise ValueError("baseyear is None")
@@ -677,7 +675,7 @@ class FInflate(Formula):
         if self._correction:
             if correction_df is None:
                 raise NameError(f"{self.name} expects correction_df")
-            if (self._correction in correction_df.columns) is False:
+            if self._correction not in correction_df.columns:
                 raise NameError(f"{self._correction} is not in correction_df")
             formula_corrected = formula_divided * correction_df.loc[:, self._correction]
         else:
@@ -1130,7 +1128,7 @@ class MultCorr(Formula):
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs, test_dfs=test_dfs)
 
-        if not correction_df:
+        if correction_df is None:
             raise TypeError("correction_df must be defined when evaluating MultCorr")
 
         evaluated_formula = self._formula.evaluate(*all_dfs, test_dfs=test_dfs)
@@ -1232,7 +1230,7 @@ class AddCorr(Formula):
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs, test_dfs=test_dfs)
 
-        if not correction_df:
+        if correction_df is None:
             raise TypeError("correction_df must be defined when evaluating AddCorr")
         if not isinstance(correction_df.index, pd.PeriodIndex):
             raise AttributeError("correction_df.index must be Pandas.PeriodIndex")

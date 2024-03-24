@@ -2,11 +2,18 @@ from pathlib import Path
 
 import pandas as pd
 from pandas import testing as tm
+from pytest import CaptureFixture
 
 from pre_system.pre_system import PreSystem
+from tests.conftest import Formulas
 
 
-def test_formulas(formulas, annual_df, indicator_df, weight_df) -> None:
+def test_formulas(
+    formulas: Formulas,
+    annual_df: pd.DataFrame,
+    indicator_df: pd.DataFrame,
+    weight_df: pd.DataFrame,
+) -> None:
     pre_system = PreSystem("Test PreSystem")
     for formula in formulas:
         pre_system.add_formula(formula)
@@ -39,7 +46,7 @@ def test_formulas(formulas, annual_df, indicator_df, weight_df) -> None:
     tm.assert_frame_equal(result_df, facit_df)
 
 
-def test_info(capsys, formulas) -> None:
+def test_info(capsys: CaptureFixture[str], formulas: Formulas) -> None:
     pre_system = PreSystem("Test PreSystem")
     for formula in formulas:
         pre_system.add_formula(formula)

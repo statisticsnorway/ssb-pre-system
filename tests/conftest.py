@@ -59,7 +59,7 @@ def formulas() -> Formulas:
 
 
 @pytest.fixture
-def fsumprod_formulas(formulas) -> FSumProdFormulas:
+def fsumprod_formulas(formulas: Formulas) -> FSumProdFormulas:
     pxf = FSumProd("pxf", [formulas.xa, formulas.xb], [1.0, 2.0])
     pxs = FSumProd("pxs", [formulas.xa, formulas.xb], ["w0", "w1"])
     return FSumProdFormulas(pxf, pxs)
@@ -75,7 +75,7 @@ def annual_df() -> pd.DataFrame:
         index=pd.period_range(start="2010", periods=years, freq="Y"),
     )
     write_new_facit_file = False
-    file = Path(__file__).parent / "testdata" / "annual_df.parquet"
+    file = Path(__file__).parent / "testdata" / "input_annual_df.parquet"
     if write_new_facit_file:
         result_df.to_parquet(file)
     else:
@@ -99,7 +99,7 @@ def indicator_df() -> pd.DataFrame:
         index=pd.period_range(start="2010-01", periods=years * 12, freq="M"),
     )
     write_new_facit_file = False
-    file = Path(__file__).parent / "testdata" / "indicator_df.parquet"
+    file = Path(__file__).parent / "testdata" / "input_indicator_df.parquet"
     if write_new_facit_file:
         result_df.to_parquet(file)
     else:
@@ -126,7 +126,7 @@ def weight_df() -> pd.DataFrame:
         weight_df[["w3", "w4"]].sum(axis=1), axis=0
     )
     write_new_facit_file = False
-    file = Path(__file__).parent / "testdata" / "weight_df.parquet"
+    file = Path(__file__).parent / "testdata" / "input_weight_df.parquet"
     if write_new_facit_file:
         weight_df.to_parquet(file)
     else:
@@ -146,7 +146,7 @@ def quarterly_df() -> pd.DataFrame:
         index=pd.period_range(start="2019q1", periods=16, freq="Q"),
     )
     write_new_facit_file = False
-    file = Path(__file__).parent / "testdata" / "quarterly_df.parquet"
+    file = Path(__file__).parent / "testdata" / "input_quarterly_df.parquet"
     if write_new_facit_file:
         result_df.to_parquet(file)
     else:
