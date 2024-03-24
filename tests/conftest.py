@@ -8,6 +8,7 @@ from pre_system.formula import FDeflate
 from pre_system.formula import FInflate
 from pre_system.formula import FJoin
 from pre_system.formula import FSum
+from pre_system.formula import FSumProd
 from pre_system.formula import Indicator
 
 
@@ -24,8 +25,19 @@ class Formulas(NamedTuple):
     vx: FSum
 
 
+class FSumProdFormulas(NamedTuple):
+    """Class for storing a list of test formulas."""
+
+    pxf: FSumProd  # With float weights
+    pxs: FSumProd  # With string weights
+
+
 @pytest.fixture
 def formulas() -> Formulas:
+    """Fixture that returns formulas for use in testing.
+
+    The formulas are taken from examples-pre-system.ipynb.
+    """
     # Let's make a formula that extrapolates x using x1, x2 and x3
     xa1 = Indicator("xa1", "xa", ["x0", "x1", "x2"])
     xa2 = Indicator("xa2", "xa", ["x0", "x1"])
@@ -41,6 +53,13 @@ def formulas() -> Formulas:
     vx = FSum("vxy", vxa, vxb)
 
     return Formulas(xa1, xa2, xa, xb, vxa, vxb, x, vx)
+
+
+@pytest.fixture
+def fsumprod_formulas(formulas) -> FSumProdFormulas:
+    pxf = FSumProd("pxf", [formulas.xa, formulas.xb], [1.0, 2.0])
+    pxs = FSumProd("pxs", [formulas.xa, formulas.xb], ["w0", "w1"])
+    return FSumProdFormulas(pxf, pxs)
 
 
 @pytest.fixture(scope="session")

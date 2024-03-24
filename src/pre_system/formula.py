@@ -314,7 +314,7 @@ class Indicator(Formula):
 
         indicator_matrix = indicators_df.loc[:, self._indicators]
         if not isinstance(indicator_matrix.index, pd.PeriodIndex):
-            raise AttributeError(f"{indicator_matrix}.index must be Pandas.PeriodIndex")
+            raise AttributeError("indicator_matrix.index must be Pandas.PeriodIndex")
 
         if self._normalise:
             indicator_matrix = indicator_matrix.div(
@@ -476,7 +476,7 @@ class FDeflate(Formula):
 
         indicator_matrix = indicators_df.loc[:, self._indicators]
         if not isinstance(indicator_matrix.index, pd.PeriodIndex):
-            raise AttributeError(f"{indicator_matrix}.index must be Pandas.PeriodIndex")
+            raise AttributeError("indicator_matrix.index must be Pandas.PeriodIndex")
 
         if self._normalise:
             indicator_matrix = indicator_matrix.div(
@@ -618,7 +618,7 @@ class FInflate(Formula):
     def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
         return [(x, y) for x, y in zip(self.indicators, self.weights)] + (
             self._formula.indicators_weights(trace=trace) if trace else []
-        )
+        )  # type: ignore [return-value]
 
     def evaluate(
         self,
@@ -637,6 +637,9 @@ class FInflate(Formula):
             )
 
         indicator_matrix = indicators_df.loc[:, self._indicators]
+        if not isinstance(indicator_matrix.index, pd.PeriodIndex):
+            raise AttributeError("indicator_matrix.index must be Pandas.PeriodIndex")
+
         if self._normalise:
             indicator_matrix = indicator_matrix.div(
                 indicator_matrix.loc[indicator_matrix.index.year == self.baseyear].sum()
@@ -648,25 +651,26 @@ class FInflate(Formula):
                     raise NameError(f"{self.name} expects weights_df")
                 if any(x not in weights_df.columns for x in self._weights):
                     missing = [x for x in self._weights if x not in weights_df.columns]
-                    raise NameError(f'Cannot find {",".join(missing)} in weights_df')
-
-            indicator_matrix = indicator_matrix.to_numpy()
-
-            if all(isinstance(x, str) for x in self._weights):
+                    raise NameError(f'Cannot find {",".join(missing)} in weights_df')  # type: ignore [arg-type]
+                if not isinstance(weights_df.index, pd.PeriodIndex):
+                    raise AttributeError("weights_df.index must be Pandas.PeriodIndex")
                 weight_vector = weights_df.loc[
                     weights_df.index.year == self.baseyear, self._weights
-                ].to_numpy()
+                ].to_numpy()  # type: ignore [misc]
+
             if all(isinstance(x, float) for x in self._weights):
                 weight_vector = np.array([self._weights])
 
             weighted_indicators = pd.Series(
-                indicator_matrix.dot(weight_vector.transpose())[:, 0],
+                indicator_matrix.to_numpy().dot(weight_vector.transpose())[:, 0],
                 index=indicators_df.index,
             )
         else:
             weighted_indicators = indicator_matrix.sum(axis=1, skipna=False)
 
         evaluated_formula = self._formula.evaluate(*all_dfs, test_dfs=test_dfs)
+        if not isinstance(evaluated_formula.index, pd.PeriodIndex):
+            raise AttributeError("evaluated_formula.index must be Pandas.PeriodIndex")
 
         formula_divided = evaluated_formula * weighted_indicators
 
@@ -678,6 +682,8 @@ class FInflate(Formula):
             formula_corrected = formula_divided * correction_df.loc[:, self._correction]
         else:
             formula_corrected = formula_divided
+        if not isinstance(formula_corrected.index, pd.PeriodIndex):
+            raise AttributeError("formula_corrected.index must be Pandas.PeriodIndex")
 
         evaluated_series = evaluated_formula.loc[
             evaluated_formula.index.year == self.baseyear
@@ -685,11 +691,11 @@ class FInflate(Formula):
             formula_corrected.loc[formula_corrected.index.year == self.baseyear].sum()
         )
 
-        return evaluated_series
+        return evaluated_series  # type: ignore [no-any-return]
 
 
 class FSum(Formula):
-    def __init__(self, name, *formulae: Formula):
+    def __init__(self, name: str, *formulae: Formula) -> None:
         """Initialize an FSum object.
 
         Parameters
@@ -766,11 +772,18 @@ class FSum(Formula):
         if any(x.evaluate(*all_dfs, test_dfs=test_dfs) is None for x in self._formulae):
             raise ValueError("some of the formulae do not evaluate")
 
-        return sum(x.evaluate(*all_dfs, test_dfs=test_dfs) for x in self._formulae)
+        # The sum function returns an int if there are no elements to sum.
+        # Make it return an empty pd.Series instead, if this is the case.
+        formulae_values = [
+            x.evaluate(*all_dfs, test_dfs=test_dfs) for x in self._formulae
+        ]
+        return sum(formulae_values) if formulae_values else pd.Series()  # type: ignore
 
 
 class FSumProd(Formula):
-    def __init__(self, name, formulae: list[Formula], weights: list[float] | list[str]):
+    def __init__(
+        self, name: str, formulae: list[Formula], weights: list[float] | list[str]
+    ) -> None:
         """Initialize an FSumProd object.
 
         Parameters
@@ -862,26 +875,31 @@ class FSumProd(Formula):
                 raise NameError(f"{self.name} expects weights_df")
             if any(x not in weights_df.columns for x in self._weights):
                 missing = [x for x in self._weights if x not in weights_df.columns]
-                raise NameError(f'Cannot find {",".join(missing)} in weights_df')
+                raise NameError(f'Cannot find {",".join(missing)} in weights_df')  # type: ignore [arg-type]
+            if not isinstance(weights_df.index, pd.PeriodIndex):
+                raise AttributeError("weights_df.index must be Pandas.PeriodIndex")
             weight_vector = (
                 weights_df[weights_df.index.year == self.baseyear][self._weights]
                 .sum()
                 .tolist()
             )
-            return sum(
+            return sum(  # type: ignore
                 x.evaluate(*all_dfs, test_dfs=test_dfs) * y
                 for x, y in zip(self._formulae, weight_vector)
             )
         if all(isinstance(x, float) for x in self._weights):
-            return sum(
-                x.evaluate(*all_dfs, test_dfs=test_dfs) * y
+            # The sum function returns an int if there are no elements to sum.
+            # Make it return an empty pd.Series instead, if this is the case.
+            formulae_values = [
+                x.evaluate(*all_dfs, test_dfs=test_dfs) * y  # type: ignore [operator]
                 for x, y in zip(self._formulae, self._weights)
-            )
+            ]
+            return sum(formulae_values) if formulae_values else pd.Series()  # type: ignore
         raise TypeError("All weights must be str or float")
 
 
 class FMult(Formula):
-    def __init__(self, name, formula1: Formula, formula2: Formula):
+    def __init__(self, name: str, formula1: Formula, formula2: Formula) -> None:
         super().__init__(name)
         if not (isinstance(formula1, Formula) and isinstance(formula2, Formula)):
             raise TypeError("formula1 and formula2 must be of type Formula")
@@ -953,7 +971,7 @@ class FMult(Formula):
 
 
 class FDiv(Formula):
-    def __init__(self, name, formula1: Formula, formula2: Formula):
+    def __init__(self, name: str, formula1: Formula, formula2: Formula) -> None:
         super().__init__(name)
         if not (isinstance(formula1, Formula) and isinstance(formula2, Formula)):
             raise TypeError("formula1 and formula2 must be of type Formula")
@@ -1025,7 +1043,7 @@ class FDiv(Formula):
 
 
 class MultCorr(Formula):
-    def __init__(self, formula: Formula, correction_name):
+    def __init__(self, formula: Formula, correction_name: str) -> None:
         """Initialize a MultCorr object.
 
         Parameters
@@ -1048,11 +1066,11 @@ class MultCorr(Formula):
         self._calls_on = formula._calls_on
 
     @property
-    def baseyear(self):
+    def baseyear(self) -> int | None:
         return self._baseyear
 
     @baseyear.setter
-    def baseyear(self, baseyear):
+    def baseyear(self, baseyear: int) -> None:
         if not isinstance(baseyear, int):
             raise TypeError("baseyear must be int")
         self._baseyear = baseyear
@@ -1112,11 +1130,18 @@ class MultCorr(Formula):
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs, test_dfs=test_dfs)
 
+        if not correction_df:
+            raise TypeError("correction_df must be defined when evaluating MultCorr")
+
         evaluated_formula = self._formula.evaluate(*all_dfs, test_dfs=test_dfs)
+        if not isinstance(evaluated_formula.index, pd.PeriodIndex):
+            raise AttributeError("evaluated_formula.index must be Pandas.PeriodIndex")
 
         formula_corrected = evaluated_formula * correction_df[self._correction_name]
+        if not isinstance(formula_corrected.index, pd.PeriodIndex):
+            raise AttributeError("formula_corrected.index must be Pandas.PeriodIndex")
 
-        return evaluated_formula[
+        return evaluated_formula[  # type: ignore
             evaluated_formula.index.year == self.baseyear
         ].sum() * formula_corrected.div(
             formula_corrected[formula_corrected.index.year == self.baseyear].sum()
@@ -1124,7 +1149,7 @@ class MultCorr(Formula):
 
 
 class AddCorr(Formula):
-    def __init__(self, formula: Formula, correction_name):
+    def __init__(self, formula: Formula, correction_name: str) -> None:
         """Initialize an AddCorr object.
 
         Parameters
@@ -1147,11 +1172,11 @@ class AddCorr(Formula):
         self._calls_on = formula.calls_on
 
     @property
-    def baseyear(self):
+    def baseyear(self) -> int | None:
         return self._baseyear
 
     @baseyear.setter
-    def baseyear(self, baseyear):
+    def baseyear(self, baseyear: int) -> None:
         if not isinstance(baseyear, int):
             raise TypeError("baseyear must be int")
         self._baseyear = baseyear
@@ -1159,7 +1184,7 @@ class AddCorr(Formula):
         self._formula.baseyear = baseyear
 
     @property
-    def what(self) -> None:
+    def what(self) -> str:
         return f"{self._correction_name}+({self._formula.what})-avg({self._correction_name}<date {self.baseyear})"
 
     def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
@@ -1206,6 +1231,11 @@ class AddCorr(Formula):
         """
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs, test_dfs=test_dfs)
+
+        if not correction_df:
+            raise TypeError("correction_df must be defined when evaluating AddCorr")
+        if not isinstance(correction_df.index, pd.PeriodIndex):
+            raise AttributeError("correction_df.index must be Pandas.PeriodIndex")
 
         return (
             correction_df[self._correction_name]
@@ -1309,6 +1339,10 @@ class FJoin(Formula):
 
         evaluated_formula1 = self._formula1.evaluate(*all_dfs, test_dfs=test_dfs)
         evaluated_formula0 = self._formula0.evaluate(*all_dfs, test_dfs=test_dfs)
+        if not isinstance(evaluated_formula1.index, pd.PeriodIndex):
+            raise AttributeError("evaluated_formula.index must be Pandas.PeriodIndex")
+        if not isinstance(evaluated_formula0.index, pd.PeriodIndex):
+            raise AttributeError("evaluated_formula.index must be Pandas.PeriodIndex")
 
         return pd.concat(
             [

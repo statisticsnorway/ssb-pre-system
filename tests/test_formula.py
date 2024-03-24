@@ -63,7 +63,7 @@ def test_formula_indicator_weights(formulas) -> None:
 
 
 def test_formula_evaluate(formulas, annual_df, indicator_df, weight_df) -> None:
-    Formula.baseyear = 2020  # TODO: Understand why not formulas.x.baseyear = 2020
+    Formula.baseyear = 2020
     result_x = formulas.x.evaluate(annual_df, indicator_df, weight_df)
     result_vx = formulas.vx.evaluate(annual_df, indicator_df, weight_df)
 
@@ -83,3 +83,11 @@ def test_formula_evaluate(formulas, annual_df, indicator_df, weight_df) -> None:
     facit_df_vx = pd.read_parquet(file_vx)
     facit_vx = facit_df_vx.iloc[:, 0]
     tm.assert_series_equal(result_vx, facit_vx, check_names=False)
+
+
+def test_evaluate_fsumprod(
+    fsumprod_formulas, annual_df, indicator_df, weight_df
+) -> None:
+    Formula.baseyear = 2020
+    result_pxf = fsumprod_formulas.pxf.evaluate(annual_df, indicator_df, weight_df)
+    result_pxs = fsumprod_formulas.pxs.evaluate(annual_df, indicator_df, weight_df)
