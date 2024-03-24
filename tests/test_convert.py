@@ -8,8 +8,7 @@ from pre_system.convert import convert_step
 
 
 def test_convert(quarterly_df) -> None:
-    result_df = convert(quarterly_df, "m")
-    print(result_df)
+    result_df = convert(quarterly_df, "M")
 
     write_new_facit_file = False
     file = Path(__file__).parent / "testdata" / "facit_convert_monthly.parquet"
@@ -21,8 +20,7 @@ def test_convert(quarterly_df) -> None:
 
 
 def test_convert_step(quarterly_df) -> None:
-    result_df = convert_step(quarterly_df, "m")
-    print(result_df)
+    result_df = convert_step(quarterly_df, "M")
 
     write_new_facit_file = False
     file = Path(__file__).parent / "testdata" / "facit_convert_step_monthly.parquet"

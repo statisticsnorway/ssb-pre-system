@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import NamedTuple
 
 import numpy as np
@@ -10,6 +11,8 @@ from pre_system.formula import FJoin
 from pre_system.formula import FSum
 from pre_system.formula import FSumProd
 from pre_system.formula import Indicator
+
+SEED = 0  # For initializing the random generator
 
 
 class Formulas(NamedTuple):
@@ -62,34 +65,55 @@ def fsumprod_formulas(formulas) -> FSumProdFormulas:
     return FSumProdFormulas(pxf, pxs)
 
 
-@pytest.fixture(scope="session")
-def generator():
-    return np.random.default_rng(0)
-
-
 @pytest.fixture
-def annual_df(generator) -> pd.DataFrame:
+def annual_df() -> pd.DataFrame:
     years = 13
-    return pd.DataFrame(
+    generator = np.random.default_rng(SEED)
+    result_df = pd.DataFrame(
         np.exp(0.02 + generator.normal(0, 0.01, (years, 10)).cumsum(axis=0)),
         columns=[f"x{i}" for i in "abcdefghij"],
         index=pd.period_range(start="2010", periods=years, freq="Y"),
     )
+    write_new_facit_file = False
+    file = Path(__file__).parent / "testdata" / "annual_df.parquet"
+    if write_new_facit_file:
+        result_df.to_parquet(file)
+    else:
+        result_df_file = pd.read_parquet(file)
+        if not result_df.equals(result_df_file):
+            diff = result_df_file.compare(result_df)
+            print(diff)
+            raise ValueError("Dataframe is different from the stored one")
+        result_df = result_df_file
+
+    return result_df
 
 
 @pytest.fixture
-def indicator_df(generator) -> pd.DataFrame:
+def indicator_df() -> pd.DataFrame:
     years = 13
-    return pd.DataFrame(
+    generator = np.random.default_rng(SEED)
+    result_df = pd.DataFrame(
         np.exp(0.02 + generator.normal(0, 0.01, (years * 12, 10)).cumsum(axis=0)),
         columns=[f"x{i}" for i in range(5)] + [f"p{i}" for i in range(5)],
         index=pd.period_range(start="2010-01", periods=years * 12, freq="M"),
     )
+    write_new_facit_file = False
+    file = Path(__file__).parent / "testdata" / "indicator_df.parquet"
+    if write_new_facit_file:
+        result_df.to_parquet(file)
+    else:
+        result_df_file = pd.read_parquet(file)
+        if not result_df.equals(result_df_file):
+            raise ValueError("Dataframe is different from the stored one")
+        result_df = result_df_file
+    return result_df
 
 
 @pytest.fixture
-def weight_df(generator) -> pd.DataFrame:
+def weight_df() -> pd.DataFrame:
     years = 13
+    generator = np.random.default_rng(SEED)
     weight_df = pd.DataFrame(
         10 + generator.normal(0, 1, (years, 5)).cumsum(axis=0),
         columns=[f"w{i}" for i in range(5)],
@@ -101,13 +125,35 @@ def weight_df(generator) -> pd.DataFrame:
     weight_df[["w3", "w4"]] = weight_df[["w3", "w4"]].divide(
         weight_df[["w3", "w4"]].sum(axis=1), axis=0
     )
+    write_new_facit_file = False
+    file = Path(__file__).parent / "testdata" / "weight_df.parquet"
+    if write_new_facit_file:
+        weight_df.to_parquet(file)
+    else:
+        result_df_file = pd.read_parquet(file)
+        if not weight_df.equals(result_df_file):
+            raise ValueError("Dataframe is different from the stored one")
+        weight_df = result_df_file
     return weight_df
 
 
 @pytest.fixture
-def quarterly_df(generator) -> pd.DataFrame:
-    return pd.DataFrame(
+def quarterly_df() -> pd.DataFrame:
+    generator = np.random.default_rng(SEED)
+    result_df = pd.DataFrame(
         np.exp(0.02 + generator.normal(0, 0.01, (16, 3)).cumsum(axis=0)),
         columns=[f"x{i}" for i in range(3)],
         index=pd.period_range(start="2019q1", periods=16, freq="Q"),
     )
+    write_new_facit_file = False
+    file = Path(__file__).parent / "testdata" / "quarterly_df.parquet"
+    if write_new_facit_file:
+        result_df.to_parquet(file)
+    else:
+        result_df_file = pd.read_parquet(file)
+        if not result_df.equals(result_df_file):
+            diff = result_df_file.compare(result_df)
+            print(diff)
+            raise ValueError("Dataframe is different from the stored one")
+        result_df = result_df_file
+    return result_df
