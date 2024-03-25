@@ -45,10 +45,6 @@ def convert(input_df: pd.DataFrame, to_freq: str) -> pd.DataFrame:
     if not all(np.issubdtype(input_df[x].dtype, np.number) for x in input_df.columns):  # type: ignore [arg-type]
         raise TypeError("All columns in input_df must be numeric")
 
-    # file = Path(__file__).parent.parent.parent / "tests" / "testdata" / "facit_convert_monthly.parquet"
-    # facit_df = pd.read_parquet(file)
-    # return facit_df
-
     freq_to_periods_per_year = {"a": 1, "q": 4, "m": 12}
     input_periods_per_year = freq_to_periods_per_year.get(
         input_df.index.freqstr[0].lower()
@@ -117,10 +113,6 @@ def convert_step(input_df: pd.DataFrame, to_freq: str) -> pd.DataFrame:
 
     if not all(np.issubdtype(input_df[x].dtype, np.number) for x in input_df.columns):  # type: ignore [arg-type]
         raise TypeError("All columns in input_df must be numeric")
-
-    # file = Path(__file__).parent.parent.parent / "tests" / "testdata" / "facit_convert_step_monthly.parquet"
-    # facit_df = pd.read_parquet(file)
-    # return facit_df
 
     freq_to_periods_per_year = {"a": 1, "q": 4, "m": 12}
     input_periods_per_year = freq_to_periods_per_year.get(
