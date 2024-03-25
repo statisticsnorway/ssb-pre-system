@@ -1,9 +1,21 @@
+"""This file defines fixtures for use when testing with pytest.
+
+The file is automatically run and included in the tests without needing to import it.
+
+The input dataframes are generated with a random generator with the same seed,
+but the numpy generator is not guaranteed to be reproducible across numpy versions.
+Therefore the input data are read from files instead. The source code includes code
+to generate new input files, just change the variable `write_new_input_file` to
+True in the functions.
+"""
+
 from pathlib import Path
 from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
 import pytest
+from pandas import testing as tm
 
 from pre_system.formula import FDeflate
 from pre_system.formula import FInflate
@@ -74,16 +86,13 @@ def annual_df() -> pd.DataFrame:
         columns=[f"x{i}" for i in "abcdefghij"],
         index=pd.period_range(start="2010", periods=years, freq="Y"),
     )
-    write_new_facit_file = False
+    write_new_input_file = False
     file = Path(__file__).parent / "testdata" / "input_annual_df.parquet"
-    if write_new_facit_file:
+    if write_new_input_file:
         result_df.to_parquet(file)
     else:
         result_df_file = pd.read_parquet(file)
-        if not result_df.equals(result_df_file):
-            diff = result_df_file.compare(result_df)
-            print(diff)
-            raise ValueError("Dataframe is different from the stored one")
+        tm.assert_frame_equal(result_df, result_df_file)
         result_df = result_df_file
 
     return result_df
@@ -98,14 +107,13 @@ def indicator_df() -> pd.DataFrame:
         columns=[f"x{i}" for i in range(5)] + [f"p{i}" for i in range(5)],
         index=pd.period_range(start="2010-01", periods=years * 12, freq="M"),
     )
-    write_new_facit_file = False
+    write_new_input_file = False
     file = Path(__file__).parent / "testdata" / "input_indicator_df.parquet"
-    if write_new_facit_file:
+    if write_new_input_file:
         result_df.to_parquet(file)
     else:
         result_df_file = pd.read_parquet(file)
-        if not result_df.equals(result_df_file):
-            raise ValueError("Dataframe is different from the stored one")
+        tm.assert_frame_equal(result_df, result_df_file)
         result_df = result_df_file
     return result_df
 
@@ -125,14 +133,13 @@ def weight_df() -> pd.DataFrame:
     weight_df[["w3", "w4"]] = weight_df[["w3", "w4"]].divide(
         weight_df[["w3", "w4"]].sum(axis=1), axis=0
     )
-    write_new_facit_file = False
+    write_new_input_file = False
     file = Path(__file__).parent / "testdata" / "input_weight_df.parquet"
-    if write_new_facit_file:
+    if write_new_input_file:
         weight_df.to_parquet(file)
     else:
         result_df_file = pd.read_parquet(file)
-        if not weight_df.equals(result_df_file):
-            raise ValueError("Dataframe is different from the stored one")
+        tm.assert_frame_equal(weight_df, result_df_file)
         weight_df = result_df_file
     return weight_df
 
@@ -145,15 +152,12 @@ def quarterly_df() -> pd.DataFrame:
         columns=[f"x{i}" for i in range(3)],
         index=pd.period_range(start="2019q1", periods=16, freq="Q"),
     )
-    write_new_facit_file = False
+    write_new_input_file = False
     file = Path(__file__).parent / "testdata" / "input_quarterly_df.parquet"
-    if write_new_facit_file:
+    if write_new_input_file:
         result_df.to_parquet(file)
     else:
         result_df_file = pd.read_parquet(file)
-        if not result_df.equals(result_df_file):
-            diff = result_df_file.compare(result_df)
-            print(diff)
-            raise ValueError("Dataframe is different from the stored one")
+        tm.assert_frame_equal(result_df, result_df_file)
         result_df = result_df_file
     return result_df
