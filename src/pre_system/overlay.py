@@ -3,21 +3,23 @@
 # mkh@ssb.no                     #
 ##################################
 
+from __future__ import annotations
+
 import pandas as pd
 
-def overlay(*dfs):
-    """
-    Combines multiple Pandas DataFrames or Series by overlaying their values based on index alignment.
+
+def overlay(*dfs: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.Series:
+    """Combines multiple Pandas DataFrames or Series by overlaying their values based on index alignment.
 
     Parameters:
     -----------
-    *dfs : pandas.DataFrame or pandas.Series
+    ``*dfs`` : pandas.DataFrame or pandas.Series
         Multiple DataFrames or Series to be combined.
 
     Returns:
     --------
     pandas.DataFrame or pandas.Series
-        Combined DataFrame or Series with overlaid values.
+    Combined DataFrame or Series with overlaid values.
 
     Raises:
     -------
@@ -32,24 +34,32 @@ def overlay(*dfs):
     It creates a new DataFrame or Series by combining the input objects.
     The index of the returned object is based on the union of indices from all input DataFrames or Series.
     """
-
-    if all(isinstance(x, pd.DataFrame) for x in dfs):
-        output = pd.DataFrame(dtype=float)
-    elif all(isinstance(x, pd.Series) for x in dfs):
-        output = pd.Series(dtype=float)
-    else:
-        raise TypeError('input must be all DataFrames or all Series')
-
-    if all(isinstance(x.index, pd.PeriodIndex) for x in dfs) is False:
-        raise AttributeError('all DataFrames/Series must have have Pandas.PeriodIndex')
-
     if len(dfs) == 1:
         return dfs[0]
 
-    if all(x.index.freq==y.index.freq for x, y in zip(dfs[:-1], dfs[1:])) is False:
-        raise AttributeError('all DataFrames/Series must have same freq')
+    if not all(isinstance(x.index, pd.PeriodIndex) for x in dfs):
+        raise AttributeError("all DataFrames/Series must have have Pandas.PeriodIndex")
 
+    if not all(x.index.freq == y.index.freq for x, y in zip(dfs[:-1], dfs[1:])):  # type: ignore
+        raise AttributeError("all DataFrames/Series must have same freq")
+
+    if all(isinstance(x, pd.DataFrame) for x in dfs):
+        return _overlay_dataframe(dfs)  # type: ignore[arg-type]
+    elif all(isinstance(x, pd.Series) for x in dfs):
+        return _overlay_series(dfs)  # type: ignore[arg-type]
+    else:
+        raise TypeError("input must be all DataFrames or all Series")
+
+
+def _overlay_dataframe(dfs: tuple[pd.DataFrame, ...]) -> pd.DataFrame:
+    output = pd.DataFrame(dtype=float)
     for df in dfs:
         output = output.combine_first(df)
+    return output
 
+
+def _overlay_series(dfs: tuple[pd.Series, ...]) -> pd.Series:
+    output = pd.Series(dtype=float)
+    for df in dfs:
+        output = output.combine_first(df)
     return output
