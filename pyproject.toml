@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ssb-pre-system"
-version = "0.5.8"
+version = "0.6.0"
 description = "Forsystem for månedlige og kvartalsevise NR-statistikker"
 authors = ["Benedikt Goodman <benedikt.goodman@ssb.no>"]
 license = "MIT"
