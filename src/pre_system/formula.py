@@ -1342,7 +1342,7 @@ class FJoin(Formula):
         if not isinstance(evaluated_formula0.index, pd.PeriodIndex):
             raise AttributeError("evaluated_formula.index must be Pandas.PeriodIndex")
 
-        return pd.concat(
+        return pd.concat(  # type: ignore
             [
                 evaluated_formula0[evaluated_formula0.index.year < self._from_year],
                 evaluated_formula1[evaluated_formula1.index.year >= self._from_year],
