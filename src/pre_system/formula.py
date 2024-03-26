@@ -175,7 +175,7 @@ class Indicator(Formula):
         correction: str | None = None,
         normalise: bool = False,
         aggregation: str = "sum",
-    ):
+    ) -> None:
         """Initialize an Indicator object.
 
         Parameters
@@ -377,7 +377,7 @@ class FDeflate(Formula):
         weights: list[str] | list[float] | None = None,
         correction: str | None = None,
         normalise: bool = False,
-    ):
+    ) -> None:
         """Initialize an FDeflate object.
 
         Parameters
@@ -539,7 +539,7 @@ class FInflate(Formula):
         weights: list[str] | list[float] | None = None,
         correction: str | None = None,
         normalise: bool = False,
-    ):
+    ) -> None:
         """Initialize an FInflate object.
 
         Parameters
@@ -1245,7 +1245,9 @@ class AddCorr(Formula):
 
 
 class FJoin(Formula):
-    def __init__(self, name: str, formula1: Formula, formula0: Formula, from_year: int):
+    def __init__(
+        self, name: str, formula1: Formula, formula0: Formula, from_year: int
+    ) -> None:
         """Initialize an FJoin object.
 
         Parameters
