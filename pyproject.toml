@@ -68,6 +68,7 @@ disallow_any_generics = false
 
 [[tool.mypy.overrides]]
 module = [
+    "jinja2.*",
     "matplotlib.*",
 ]
 ignore_missing_imports = true
