@@ -1,7 +1,7 @@
 {
   "template": "https://github.com/statisticsnorway/ssb-pypitemplate.git",
-  "commit": "d90e456d70e93b25baceae5f127b2440967baf2c",
-  "checkout": null,
+  "commit": "f7f5ee76f498f10dd72f7f263516aeaff20b0b3a",
+  "checkout": "2024.4.9",
   "context": {
     "cookiecutter": {
       "project_name": "ssb-pre-system",

@@ -15,7 +15,7 @@ classifiers = ["Development Status :: 4 - Beta"]
 Changelog = "https://github.com/statisticsnorway/ssb-pre-system/releases"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 numpy = ">=1.26.4"
 pandas = {extras = ["performance"], version = ">=2.2.1"}
 pandas-stubs = ">=2.2.0.240218"
@@ -76,7 +76,7 @@ ignore_missing_imports = true
 force-exclude = true  # Apply excludes to pre-commit
 show-fixes = true
 src = ["src", "tests"]
-target-version = "py39"  # Minimum Python version supported
+target-version = "py310"  # Minimum Python version supported
 include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
 extend-exclude = [
     "__pycache__",
