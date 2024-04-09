@@ -241,7 +241,7 @@ class Indicator(Formula):
             aggregated_indicators = "+".join(
                 [
                     "*".join([str(x).lower(), y.lower()])
-                    for x, y in zip(self._weights, indicators)
+                    for x, y in zip(self._weights, indicators, strict=True)
                 ]
             )
         else:
@@ -256,7 +256,7 @@ class Indicator(Formula):
     def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
         if not all(isinstance(x, float) for x in self.weights):
             raise TypeError("all weights must be of type float")
-        return [(x, y) for x, y in zip(self.indicators, self.weights)]  # type: ignore
+        return [(x, y) for x, y in zip(self.indicators, self.weights, strict=True)]  # type: ignore
 
     def evaluate(
         self,
@@ -439,7 +439,7 @@ class FDeflate(Formula):
             aggregated_indicators = "+".join(
                 [
                     "*".join([str(x).lower(), y.lower()])
-                    for x, y in zip(self._weights, indicators)
+                    for x, y in zip(self._weights, indicators, strict=True)
                 ]
             )
         else:
@@ -452,7 +452,7 @@ class FDeflate(Formula):
         return f"sum({self._formula.name}<date {self.baseyear}>)*{fraction}"
 
     def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
-        return [(x, y) for x, y in zip(self.indicators, self.weights)] + (
+        return [(x, y) for x, y in zip(self.indicators, self.weights, strict=True)] + (
             self._formula.indicators_weights(trace=trace) if trace else []
         )  # type: ignore [return-value]
 
@@ -601,7 +601,7 @@ class FInflate(Formula):
             aggregated_indicators = "+".join(
                 [
                     "*".join([str(x).lower(), y.lower()])
-                    for x, y in zip(self._weights, indicators)
+                    for x, y in zip(self._weights, indicators, strict=True)
                 ]
             )
         else:
@@ -614,7 +614,7 @@ class FInflate(Formula):
         return f"sum({self._formula.name}<date {self.baseyear}>)*{fraction}"
 
     def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
-        return [(x, y) for x, y in zip(self.indicators, self.weights)] + (
+        return [(x, y) for x, y in zip(self.indicators, self.weights, strict=True)] + (
             self._formula.indicators_weights(trace=trace) if trace else []
         )  # type: ignore [return-value]
 
@@ -812,7 +812,7 @@ class FSumProd(Formula):
         return "+".join(
             [
                 "*".join([x.name, str(y).lower()])
-                for x, y in zip(self._formulae, self._weights)
+                for x, y in zip(self._formulae, self._weights, strict=True)
             ]
         )
 
@@ -883,14 +883,14 @@ class FSumProd(Formula):
             )
             return sum(  # type: ignore
                 x.evaluate(*all_dfs, test_dfs=test_dfs) * y
-                for x, y in zip(self._formulae, weight_vector)
+                for x, y in zip(self._formulae, weight_vector, strict=True)
             )
         if all(isinstance(x, float) for x in self._weights):
             # The sum function returns an int if there are no elements to sum.
             # Make it return an empty pd.Series instead, if this is the case.
             formulae_values = [
                 x.evaluate(*all_dfs, test_dfs=test_dfs) * y  # type: ignore [operator]
-                for x, y in zip(self._formulae, self._weights)
+                for x, y in zip(self._formulae, self._weights, strict=True)
             ]
             return sum(formulae_values) if formulae_values else pd.Series()  # type: ignore
         raise TypeError("All weights must be str or float")
