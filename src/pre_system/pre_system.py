@@ -185,7 +185,7 @@ class PreSystem:
         count_missing = df.isna().sum()
         if count_missing.sum() > 0:
             print(
-                f'WARNING: there are NaN values in {",".join([y for x, y in zip(count_missing, count_missing.index) if x > 0])}'
+                f'WARNING: there are NaN values in {",".join([y for x, y in zip(count_missing, count_missing.index, strict=True) if x > 0])}'
             )
 
     def __repr__(self) -> str:

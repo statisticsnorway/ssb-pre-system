@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import itertools
+
 import pandas as pd
 
 
@@ -40,7 +42,7 @@ def overlay(*dfs: pd.DataFrame | pd.Series) -> pd.DataFrame | pd.Series:
     if not all(isinstance(x.index, pd.PeriodIndex) for x in dfs):
         raise AttributeError("all DataFrames/Series must have have Pandas.PeriodIndex")
 
-    if not all(x.index.freq == y.index.freq for x, y in zip(dfs[:-1], dfs[1:])):  # type: ignore
+    if not all(x.index.freq == y.index.freq for x, y in itertools.pairwise(dfs)):  # type: ignore
         raise AttributeError("all DataFrames/Series must have same freq")
 
     if all(isinstance(x, pd.DataFrame) for x in dfs):
