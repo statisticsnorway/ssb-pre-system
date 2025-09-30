@@ -13,19 +13,45 @@
 
 # Necessary packages.
 import warnings
+from typing import Literal
 
 import numpy as np
 import pandas as pd
-from numpy.linalg import *
 
 warnings.simplefilter("ignore", category=FutureWarning)
 np.set_printoptions(suppress=True)
 
 
-def mind4(mnr, rea, liste_d4, basisaar, startaar, freq="M"):
+def mind4(
+    mnr: pd.DataFrame,
+    rea: pd.DataFrame,
+    liste_d4: list[str] | str,
+    basisaar: int,
+    startaar: int,
+    freq: Literal["M", "Q"] = "M",
+) -> pd.DataFrame:
+    """Executes benchmarking of monthly or quarterly data against annual data for specific series, using the MinD4 method.
+
+    The function validates input data types, checks for consistency,
+    and addresses edge cases such as missing values or invalid contents. The function
+    allows scaling adjustments for leading and trailing periods using specified start and
+    basis years, which determine the timeframe of analysis.
+
+    Args:
+        mnr: DataFrame with monthly or quarterly data having a pd.PeriodIndex.
+        rea: DataFrame with annual data having a pd.PeriodIndex.
+        liste_d4: List or single string of series names to benchmark.
+        basisaar: Final year to include in the analysis.
+        startaar: Initial year to include in the analysis.
+        freq: Frequency of the time series data ('M' for monthly, 'Q' for quarterly).
+            Default is "M".
+
+    Returns:
+        pd.DataFrame: DataFrame containing the benchmarking results, after MinD4 adjustments.
+    """
     res_dict = {}
 
-    if not (freq == "M" or freq == "Q"):
+    if freq not in ["M", "Q"]:
         raise TypeError('The frequency setting must me either "M" or "Q".')
     if freq == "M":
         freq_ = 12
@@ -36,12 +62,12 @@ def mind4(mnr, rea, liste_d4, basisaar, startaar, freq="M"):
 
     # CHECKS.
     # Checking object type.
-    if not (type(liste_d4) == list or type(liste_d4) == str):
+    if not isinstance(liste_d4, list) or isinstance(liste_d4, str):
         raise TypeError(
             "You need to create a list of all the series you wish to benchmark, and it must be in the form of a list or string."
         )
 
-    if type(liste_d4) == str:
+    if isinstance(liste_d4, str):
         liste_d4 = [liste_d4]
 
     # Checking the monthly/quarterly DF.
@@ -181,7 +207,7 @@ def mind4(mnr, rea, liste_d4, basisaar, startaar, freq="M"):
         raise TypeError(
             "The final year must be less than 2050. Are you sure you entered it correctly?."
         )
-    if not basisaar >= startaar:
+    if basisaar < startaar:
         raise TypeError("The start year cannot be greater than the final year.")
 
     print("The inputdata passed the checks.\n")
@@ -273,7 +299,7 @@ def mind4(mnr, rea, liste_d4, basisaar, startaar, freq="M"):
         # Solves the equation system AY=X for Y if possible. Otherwise, returns null.
         try:
             Y = np.linalg.solve(A, X)
-        except:
+        except np.linalg.LinAlgError:
             warnings.warn(
                 f"Wasn't able to benchmark {elem}.", UserWarning, stacklevel=2
             )
@@ -294,11 +320,9 @@ def mind4(mnr, rea, liste_d4, basisaar, startaar, freq="M"):
     )
     for elem in set(liste_d4) - set(skippe):
         if (
-            (
-                ((res.resample("Y").sum() - rea_of_concern) >= -1)
-                & ((res.resample("Y").sum() - rea_of_concern) <= 1)
-            ).all()[elem] is not np.True_
-        ):
+            ((res.resample("Y").sum() - rea_of_concern) >= -1)
+            & ((res.resample("Y").sum() - rea_of_concern) <= 1)
+        ).all()[elem] is not np.True_:
             warnings.warn(
                 f"There are deviations on the benchmarked totals in {elem} so something did not go well.",
                 UserWarning,

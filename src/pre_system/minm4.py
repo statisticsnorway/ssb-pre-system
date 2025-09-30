@@ -13,19 +13,54 @@
 
 # Necessary packages.
 import warnings
+from typing import Literal
 
 import numpy as np
 import pandas as pd
-from numpy.linalg import *
 
 warnings.simplefilter("ignore", category=FutureWarning)
 np.set_printoptions(suppress=True)
 
 
-def minm4(mnr, rea, liste_m4, basisaar, startaar, freq="M"):
+def minm4(
+    mnr: pd.DataFrame,
+    rea: pd.DataFrame,
+    liste_m4: list[str] | str,
+    basisaar: int,
+    startaar: int,
+    freq: Literal["M", "Q"] = "M",
+) -> pd.DataFrame:
+    """Perform benchmarking of monthly or quarterly data against yearly data using MinD4 method.
+
+    This function takes two sets of data (monthly/quarterly and yearly), validates them,
+    and applies the MinD4 method to "benchmark" or adjust the input data accordingly.
+    It ensures consistency between the series in terms of data structure, formats,
+    and numerical properties.
+
+    Args:
+        mnr: DataFrame containing monthly or quarterly data to be benchmarked.
+            The index must be a pandas PeriodIndex.
+        rea: DataFrame containing yearly data for benchmarking.
+            The index must be a pandas PeriodIndex.
+        liste_m4: A list of series (column names from the DataFrame)
+            to be benchmarked, or a single series as a string.
+        basisaar: The final year for benchmarking (benchmarking range end).
+        startaar: The start year for benchmarking (benchmarking range start).
+        freq: Frequency of the data. Use "M" for monthly
+            and "Q" for quarterly. Defaults to "M".
+
+    Returns:
+        A DataFrame with the benchmarked values for the specified series in `liste_m4`.
+
+    Raises:
+        TypeError: If the input parameters or dataframes do not meet the expected types,
+            structures, or contents.
+        UserWarning: If any issues such as NaN values, all-zero columns, or non-numeric
+            data are found in the input dataframes.
+    """
     res_dict = {}
 
-    if type(liste_m4) == str:
+    if isinstance(liste_m4, str):
         liste_m4 = [liste_m4]
 
     if not (freq == "M" or freq == "Q"):
@@ -39,7 +74,7 @@ def minm4(mnr, rea, liste_m4, basisaar, startaar, freq="M"):
 
     # CHECKS.
     # Checking object type.
-    if not type(liste_m4) == list or type(liste_m4) == str:
+    if not isinstance(liste_m4, list) or isinstance(liste_m4, str):
         raise TypeError(
             "You need to create a list of all the series you wish to benchmark, and it must be in the form of a list or string."
         )
@@ -177,11 +212,11 @@ def minm4(mnr, rea, liste_m4, basisaar, startaar, freq="M"):
         raise TypeError("The start year must be an integer.")
     if not isinstance(basisaar, int):
         raise TypeError("The final year must be an integer.")
-    if not basisaar < 2050:
+    if basisaar >= 2050:
         raise TypeError(
             "The final year must be less than 2050. Are you sure you entered it correctly?."
         )
-    if not basisaar >= startaar:
+    if basisaar < startaar:
         raise TypeError("The start year cannot be greater than the final year.")
 
     print("The inputdata passed the checks.\n")
@@ -237,7 +272,7 @@ def minm4(mnr, rea, liste_m4, basisaar, startaar, freq="M"):
         # Solves the equation system AY=X for Y if possible.
         try:
             Y = np.linalg.solve(A, X)
-        except:
+        except np.linalg.LinAlgError:
             warnings.warn(f"Wasn't able to benchmark{elem}.", UserWarning, stacklevel=2)
 
         res_dict[elem] = Y[0:nm].flatten()
@@ -255,11 +290,9 @@ def minm4(mnr, rea, liste_m4, basisaar, startaar, freq="M"):
     )
     for elem in set(liste_m4) - set(skippe):
         if (
-            (
-                ((res.resample("Y").sum() - rea_of_concern) >= -1)
-                & ((res.resample("Y").sum() - rea_of_concern) <= 1)
-            ).all()[elem] is not np.True_
-        ):
+            ((res.resample("Y").sum() - rea_of_concern) >= -1)
+            & ((res.resample("Y").sum() - rea_of_concern) <= 1)
+        ).all()[elem] is not np.True_:
             warnings.warn(
                 f"There are deviations on the benchmarked totals in {elem} so something did not go well.",
                 UserWarning,
