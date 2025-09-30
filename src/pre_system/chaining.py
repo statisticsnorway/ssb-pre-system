@@ -11,9 +11,10 @@
 #     name: python3
 # ---
 
-import pandas as pd
-import numpy as np
 import warnings
+
+import numpy as np
+import pandas as pd
 
 
 def chain_df(
@@ -32,9 +33,9 @@ def chain_df(
         serieslist = [serieslist]
     # Checking dfs object type.
     if not isinstance(val_df, pd.DataFrame):
-        raise TypeError(f"The value dataframe is not a pd.DataFrame.")
+        raise TypeError("The value dataframe is not a pd.DataFrame.")
     if not isinstance(fp_df, pd.DataFrame):
-        raise TypeError(f"The fixed price dataframe is not a pd.DataFrame.")
+        raise TypeError("The fixed price dataframe is not a pd.DataFrame.")
 
     # Checking index.
     if not isinstance(val_df.index, pd.PeriodIndex):
@@ -158,22 +159,22 @@ def chain_df(
     ]
 
     # Checking that start and end years are in range.
-    if not pd.Period(startyear, freq="Y") in val_df_of_concern.index:
-        raise AssertionError(f'Selected start year not in the value dataframe.')
-    if not pd.Period(endyear, freq="Y") in val_df_of_concern.index:
-        raise AssertionError(f'Selected end year not in the value dataframe.')        
-    if not pd.Period(startyear, freq="Y") in fp_df_of_concern.index:
-        raise AssertionError(f'Selected start year not in the fixed price dataframe.')
-    if not pd.Period(endyear, freq="Y") in fp_df_of_concern.index:
-        raise AssertionError(f'Selected end year not in the value dataframe.')
+    if pd.Period(startyear, freq="Y") not in val_df_of_concern.index:
+        raise AssertionError('Selected start year not in the value dataframe.')
+    if pd.Period(endyear, freq="Y") not in val_df_of_concern.index:
+        raise AssertionError('Selected end year not in the value dataframe.')        
+    if pd.Period(startyear, freq="Y") not in fp_df_of_concern.index:
+        raise AssertionError('Selected start year not in the fixed price dataframe.')
+    if pd.Period(endyear, freq="Y") not in fp_df_of_concern.index:
+        raise AssertionError('Selected end year not in the value dataframe.')
 
     # Checking base year is in year range.
     if not baseyear <= endyear or not baseyear > startyear:
-        raise AssertionError(f'Base year is not between end year and start year.')
-    if not pd.Period(baseyear, freq="Y") in val_df_of_concern.index:
-        raise AssertionError(f'Selected base year not in the value dataframe.')
-    if not pd.Period(baseyear, freq="Y") in fp_df_of_concern.index:
-        raise AssertionError(f'Selected base year not in the fixed price dataframe.')
+        raise AssertionError('Base year is not between end year and start year.')
+    if pd.Period(baseyear, freq="Y") not in val_df_of_concern.index:
+        raise AssertionError('Selected base year not in the value dataframe.')
+    if pd.Period(baseyear, freq="Y") not in fp_df_of_concern.index:
+        raise AssertionError('Selected base year not in the fixed price dataframe.')
         
     if not isinstance(startyear, int):
         raise TypeError("The start year must be an integer.")
