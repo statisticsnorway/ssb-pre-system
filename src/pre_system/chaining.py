@@ -5,6 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
+#       jupytext_version: 1.17.3
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -25,7 +26,7 @@ def chain_df(
     startyear: int=None, 
     endyear: int=None, 
     appendvlname: bool = False
-):
+) -> pd.DataFrame:
     # Checking list object type.
     if not isinstance(serieslist, list) or isinstance(serieslist, str):
         raise TypeError("You need to create a list of all the series you wish to chain, and it must be in the form of a list or string.")
