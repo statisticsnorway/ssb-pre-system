@@ -21,6 +21,11 @@ np.set_printoptions(suppress=True)
 pd.set_option("display.float_format", "{:.0f}".format)
 
 # Importing the functions from the .py-files with the same name respectively.
+from examples.example_m_y_numbers import cols
+from examples.example_m_y_numbers import m_array
+from examples.example_m_y_numbers import m_index
+from examples.example_m_y_numbers import y_array
+from examples.example_m_y_numbers import y_index
 from src.pre_system.mind4 import mind4
 from src.pre_system.minm4 import minm4
 
