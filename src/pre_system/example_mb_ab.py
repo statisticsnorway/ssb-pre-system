@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.17.3
+#       jupytext_version: 1.15.2
 #   kernelspec:
 #     display_name: ssb-pre-system
 #     language: python
@@ -22,7 +22,7 @@ from multiplicative_benchmark import multiplicative_benchmark
 
 
 # %%
-def gml_additive_benchmark(
+def gml_ka(
     df_indicator: pd.DataFrame, df_target: pd.DataFrame, strict_mode=True
 ) -> pd.DataFrame:
     """
@@ -125,3 +125,20 @@ def gml_additive_benchmark(
     df_indicator[overlapping_cols] = df_indicator[overlapping_cols] + diff
 
     return df_indicator
+
+
+# %%
+def gml_km(df_target: pd.DataFrame, df_indicator: pd.DataFrame):
+    df_ratio = (
+        df_indicator.groupby(
+            pd.PeriodIndex(df_indicator.index, freq=df_target.index.freq)
+        )
+        .sum()
+        .div(df_target)
+        .resample(df_indicator.index.freq)
+        .ffill()
+    )
+
+    return df_indicator.div(df_ratio.fillna(1).reindex(df_indicator.index))[
+        df_indicator.columns
+    ]
