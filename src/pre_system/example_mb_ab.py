@@ -1,14 +1,38 @@
-def additive_benchmark(
-    df_indicator: pd.DataFrame, target_df: pd.DataFrame, strict_mode=True
+# ---
+# jupyter:
+#   jupytext:
+#     formats: py:percent
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.17.3
+#   kernelspec:
+#     display_name: ssb-pre-system
+#     language: python
+#     name: ssb-pre-system
+# ---
+
+# %%
+import pandas as pd
+import numpy as np
+
+from additive_benchmark import additive_benchmark
+from multiplicative_benchmark import multiplicative_benchmark
+
+
+# %%
+def gml_additive_benchmark(
+    df_indicator: pd.DataFrame, df_target: pd.DataFrame, strict_mode=True
 ) -> pd.DataFrame:
     """
-    TLDR: Adjust values in target_df to match df_indicator with additive quota adjustment.
+    TLDR: Adjust values in df_target to match df_indicator with additive quota adjustment.
 
-    Adjust values in target_df to match df_indicator using additive quota adjustment.
+    Adjust values in df_target to match df_indicator using additive quota adjustment.
 
-    This function adjusts the values in target_df to match the values in df_indicator by first aggregating target_df to the same
+    This function adjusts the values in df_target to match the values in df_indicator by first aggregating df_target to the same
     frequency as df_indicator, then calculating the difference between the two, spreading the difference evenly across the
-    corresponding periods in target_df, and adding the difference to target_df. The adjusted df_indicator is then returned,
+    corresponding periods in df_target, and adding the difference to df_target. The adjusted df_indicator is then returned,
     with non-overlapping columns left untreated.
 
     Author: Benedikt Goodman, Seksjon for Nasjonalregnskap
@@ -17,7 +41,7 @@ def additive_benchmark(
     ----------
     df_indicator : pd.DataFrame
         The DataFrame containing the indicator values that will be benchmarked. Must have a period index.
-    target_df : pd.DataFrame
+    df_target : pd.DataFrame
         The DataFrame containing the values to benchmark additively against. Must have a period index.
     strict_mode : bool, optional
         If True, raise an error if the time intervals are not of equal length.
@@ -26,15 +50,15 @@ def additive_benchmark(
     Returns
     -------
     pd.DataFrame
-        The adjusted df_indicator with the same frequency as the original target_df, with non-overlapping columns left untreated.
+        The adjusted df_indicator with the same frequency as the original df_target, with non-overlapping columns left untreated.
 
     Raises
     ------
     ValueError
-        If either of the input DataFrames does not have a datetime or period index, or if target_df has a finer frequency
-        than df_indicator (i.e. df_indicator has quarterly data and target_df has monthly data)
+        If either of the input DataFrames does not have a datetime or period index, or if df_target has a finer frequency
+        than df_indicator (i.e. df_indicator has quarterly data and df_target has monthly data)
     KeyError
-        If no overlapping column names between df_indicator and target_df exist.
+        If no overlapping column names between df_indicator and df_target exist.
     IndexError
         If strict_mode is True and the time intervals are not of equal length.
     UserWarning
@@ -43,9 +67,9 @@ def additive_benchmark(
     Examples
     --------
     >>> import pandas as pd
-    >>> target_df = pd.DataFrame({'value': [1, 2, 3, 4, 5, 6]}, index=pd.date_range(start='2022-01-01', periods=6, freq='M'))
+    >>> df_target = pd.DataFrame({'value': [1, 2, 3, 4, 5, 6]}, index=pd.date_range(start='2022-01-01', periods=6, freq='M'))
     >>> df_indicator = pd.DataFrame({'value': [7, 12], 'other_col': [10, 20]}, index=pd.date_range(start='2022-01-01', periods=2, freq='Q'))
-    >>> adjusted_df = additive_benchmark(target_df, df_indicator)
+    >>> adjusted_df = additive_benchmark(df_target, df_indicator)
     >>> print(adjusted_df)
                 value  other_col
         2022-01-31   3.5        10
@@ -59,40 +83,40 @@ def additive_benchmark(
     # Validate input DataFrame indexes
     if not (
         isinstance(df_indicator.index, pd.PeriodIndex)
-        and isinstance(target_df.index, pd.PeriodIndex)
+        and isinstance(df_target.index, pd.PeriodIndex)
     ):
         raise ValueError("Both DataFrames must have a datetime or a period index.")
 
     # Raise issue if for example df_indicator has year index while df_target has months
-    if get_duration(df_indicator.index) >= get_duration(target_df.index):
+    if get_duration(df_indicator.index) >= get_duration(df_target.index):
         raise ValueError(
             "Period index in df_indicator must be of finer frequency than df_target."
         )
 
     # Checks if the input dataframes cover the same time-intervall.
     # Raises error if intervals are note the same and strict_mode is True
-    check_time_interval(df_indicator, target_df, strict_mode=strict_mode)
+    check_time_interval(df_indicator, df_target, strict_mode=strict_mode)
 
 
     # Find overlapping columns
-    overlapping_cols = df_indicator.columns.intersection(target_df.columns)
+    overlapping_cols = df_indicator.columns.intersection(df_target.columns)
     if overlapping_cols.empty:
         raise KeyError(
             "There are no overlapping columns between the two input dataframes."
         )
 
-    # Aggregate target_df to the frequency of df_indicator
+    # Aggregate df_target to the frequency of df_indicator
     df_indicator_agg = (
-        df_indicator[overlapping_cols].resample(target_df.index.freqstr).sum()
+        df_indicator[overlapping_cols].resample(df_target.index.freqstr).sum()
     )
 
     # Calculates amount of months in a quarter or year and so forth
     num_periods = calculate_subperiods(
-        df_indicator.index.freqstr, target_df.index.freqstr
+        df_indicator.index.freqstr, df_target.index.freqstr
     )
 
-    # Calculate the difference between df_indicator and the aggregated target_df
-    diff = (target_df[overlapping_cols] - df_indicator_agg) / num_periods
+    # Calculate the difference between df_indicator and the aggregated df_target
+    diff = (df_target[overlapping_cols] - df_indicator_agg) / num_periods
 
     # Disaggregate diff
     diff = diff.resample(df_indicator.index.freqstr).ffill()
