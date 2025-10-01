@@ -53,10 +53,10 @@ def chain_df(
             f"{np.setdiff1d(serieslist, fp_df.columns).tolist()} are missing in the fixed price dataframe."
         )
 
-    if startyear is None:
-        startyear = val_df.index[0].year
+    if startyear is None: # Sets start and end year as the greatest range possible if not otherwise specified.
+        startyear = max(example_value_df.index.min().year, test_example_value_df.index.min().year)
     if endyear is None:
-        endyear   = val_df.index[-1].year
+        endyear   = min(example_value_df.index.max().year, test_example_value_df.index.max().year)
     if startyear > endyear:
         raise TypeError("The start year cannot be greater than the end year.")
 
