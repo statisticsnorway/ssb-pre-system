@@ -19,19 +19,14 @@ import pandas as pd
 
 
 def chain_df(
-    val_df: pd.DataFrame, 
-    fp_df: pd.DataFrame, 
-    serieslist: list[str] | str=None, 
-    baseyear: int=None, 
-    startyear: int=None, 
-    endyear: int=None, 
-    appendvlname: bool = False
+    val_df: pd.DataFrame,
+    fp_df: pd.DataFrame,
+    serieslist: list[str] | str | None = None,
+    baseyear: int | None = None,
+    startyear: int | None = None,
+    endyear: int | None = None,
+    appendvlname: bool = False,
 ) -> pd.DataFrame:
-    # Checking list object type.
-    if not isinstance(serieslist, list) or isinstance(serieslist, str):
-        raise TypeError("You need to create a list of all the series you wish to chain, and it must be in the form of a list or string.")
-    if isinstance(serieslist, str):
-        serieslist = [serieslist]
     # Checking dfs object type.
     if not isinstance(val_df, pd.DataFrame):
         raise TypeError("The value dataframe is not a pd.DataFrame.")
@@ -40,9 +35,11 @@ def chain_df(
 
     # Checking index.
     if not isinstance(val_df.index, pd.PeriodIndex):
-        raise TypeError('Index must be a pd.PeriodIndex in the current prices DataFrame.')
+        raise TypeError(
+            "Index must be a pd.PeriodIndex in the current prices DataFrame."
+        )
     if not isinstance(fp_df.index, pd.PeriodIndex):
-        raise TypeError('Index must be a pd.PeriodIndex in the fixed prices DataFrame.') 
+        raise TypeError("Index must be a pd.PeriodIndex in the fixed prices DataFrame.")
     # Checking columns.
     if not pd.Series(serieslist).isin(val_df.columns).all():
         raise TypeError(
@@ -53,22 +50,33 @@ def chain_df(
             f"{np.setdiff1d(serieslist, fp_df.columns).tolist()} are missing in the fixed price dataframe."
         )
 
-    if startyear is None: # Sets start and end year as the greatest range possible if not otherwise specified.
-        startyear = max(example_value_df.index.min().year, test_example_value_df.index.min().year)
+    if (
+        startyear is None
+    ):  # Sets start and end year as the greatest range possible if not otherwise specified.
+        startyear = max(val_df.index.min().year, fp_df.index.min().year)
     if endyear is None:
-        endyear   = min(example_value_df.index.max().year, test_example_value_df.index.max().year)
+        endyear = min(val_df.index.max().year, fp_df.index.max().year)
     if startyear > endyear:
         raise TypeError("The start year cannot be greater than the end year.")
 
+    # Checking list object type.
+    if serieslist is None:
+        serieslist = np.intersect1d(val_df.columns, fp_df.columns).tolist()
+
+    if not isinstance(serieslist, list) or isinstance(serieslist, str):
+        raise TypeError(
+            "You need to create a list of all the series you wish to chain, and it must be in the form of a list or string."
+        )
+    if isinstance(serieslist, str):
+        serieslist = [serieslist]
+
     # Filters out series not sent to chaining.
-    val_df_of_concern = val_df[
-        val_df.columns[val_df.columns.isin(serieslist)]
-    ]  
+    val_df_of_concern = val_df[val_df.columns[val_df.columns.isin(serieslist)]]
     val_df_of_concern = val_df_of_concern[
         (val_df_of_concern.index.year <= endyear)
         & (val_df_of_concern.index.year >= startyear)
     ]
-    
+
     fp_df_of_concern = fp_df[
         fp_df.columns[fp_df.columns.isin(serieslist)]
     ]  # Filters out series not sent to chaining.
@@ -76,10 +84,9 @@ def chain_df(
         (fp_df_of_concern.index.year <= endyear)
         & (fp_df_of_concern.index.year >= startyear)
     ]
-    
 
     # Value checks for val_df.
-    valzerowarnlist = [] # Zeroes checks.
+    valzerowarnlist = []  # Zeroes checks.
     for col in val_df_of_concern.columns:
         if (val_df_of_concern[col] == 0).all():
             valzerowarnlist.append(f"{col}")
@@ -89,11 +96,12 @@ def chain_df(
             UserWarning,
             stacklevel=2,
         )
-    valintwarnlist = [] # Non-int check.
+    valintwarnlist = []  # Non-int check.
     for col in val_df_of_concern.columns:
         if (
             not pd.api.types.is_any_real_numeric_dtype(val_df_of_concern[col])
-            and col not in val_df_of_concern.columns[val_df_of_concern.isna().any()].to_list()
+            and col
+            not in val_df_of_concern.columns[val_df_of_concern.isna().any()].to_list()
         ):
             valintwarnlist.append(f"{col}")
     if len(valintwarnlist) > 0:
@@ -102,14 +110,15 @@ def chain_df(
             UserWarning,
             stacklevel=2,
         )
-    if val_df_of_concern.isna().any().any() is np.True_: # NaN check.
+    if val_df_of_concern.isna().any().any() is np.True_:  # NaN check.
         warnings.warn(
             f"There are NaN-values in {val_df_of_concern.columns[val_df_of_concern.isna().any()].to_list()} in the value dataframe.",
             UserWarning,
-            stacklevel=2,)
-    
+            stacklevel=2,
+        )
+
     # Value checks for fp_df.
-    fpzerowarnlist = [] # Zeroes checks.
+    fpzerowarnlist = []  # Zeroes checks.
     for col in fp_df_of_concern.columns:
         if (fp_df_of_concern[col] == 0).all():
             fpzerowarnlist.append(f"{col}")
@@ -120,11 +129,12 @@ def chain_df(
             stacklevel=2,
         )
 
-    fpintwarnlist = [] # Non-int check.
+    fpintwarnlist = []  # Non-int check.
     for col in fp_df_of_concern.columns:
         if (
             not pd.api.types.is_any_real_numeric_dtype(fp_df_of_concern[col])
-            and col not in fp_df_of_concern.columns[fp_df_of_concern.isna().any()].to_list()
+            and col
+            not in fp_df_of_concern.columns[fp_df_of_concern.isna().any()].to_list()
         ):
             fpintwarnlist.append(f"{col}")
     if len(fpintwarnlist) > 0:
@@ -133,11 +143,12 @@ def chain_df(
             UserWarning,
             stacklevel=2,
         )
-    if fp_df_of_concern.isna().any().any() is np.True_: # NaN check.
+    if fp_df_of_concern.isna().any().any() is np.True_:  # NaN check.
         warnings.warn(
             f"There are NaN-values in {fp_df_of_concern.columns[fp_df_of_concern.isna().any()].to_list()} in the fixed price dataframe.",
             UserWarning,
-            stacklevel=2,)
+            stacklevel=2,
+        )
 
     # valintwarnlist
     val_df_of_concern = val_df_of_concern[
@@ -161,22 +172,22 @@ def chain_df(
 
     # Checking that start and end years are in range.
     if pd.Period(startyear, freq="Y") not in val_df_of_concern.index:
-        raise AssertionError('Selected start year not in the value dataframe.')
+        raise AssertionError("Selected start year not in the value dataframe.")
     if pd.Period(endyear, freq="Y") not in val_df_of_concern.index:
-        raise AssertionError('Selected end year not in the value dataframe.')        
+        raise AssertionError("Selected end year not in the value dataframe.")
     if pd.Period(startyear, freq="Y") not in fp_df_of_concern.index:
-        raise AssertionError('Selected start year not in the fixed price dataframe.')
+        raise AssertionError("Selected start year not in the fixed price dataframe.")
     if pd.Period(endyear, freq="Y") not in fp_df_of_concern.index:
-        raise AssertionError('Selected end year not in the value dataframe.')
+        raise AssertionError("Selected end year not in the value dataframe.")
 
     # Checking base year is in year range.
-    if not baseyear <= endyear or not baseyear > startyear:
-        raise AssertionError('Base year is not between end year and start year.')
+    if not baseyear <= endyear or not baseyear >= startyear:
+        raise AssertionError("Base year is not between end year and start year.")
     if pd.Period(baseyear, freq="Y") not in val_df_of_concern.index:
-        raise AssertionError('Selected base year not in the value dataframe.')
+        raise AssertionError("Selected base year not in the value dataframe.")
     if pd.Period(baseyear, freq="Y") not in fp_df_of_concern.index:
-        raise AssertionError('Selected base year not in the fixed price dataframe.')
-        
+        raise AssertionError("Selected base year not in the fixed price dataframe.")
+
     if not isinstance(startyear, int):
         raise TypeError("The start year must be an integer.")
     if not isinstance(endyear, int):
@@ -194,17 +205,18 @@ def chain_df(
 
     # ratio
     ratio_df = (fp_df_of_concern / val_df_of_concern.shift(1)).fillna(1)
-    
+
     # accumulated ratio
     cum_product_df = ratio_df.cumprod()
 
     # Volume values
     vl_df = (
-        cum_product_df*val_df_of_concern.loc[val_df_of_concern.index.year == baseyear].values[0]/
-        cum_product_df.loc[val_df_of_concern.index.year == baseyear].values[0]
+        cum_product_df
+        * val_df_of_concern.loc[val_df_of_concern.index.year == baseyear].values[0]
+        / cum_product_df.loc[val_df_of_concern.index.year == baseyear].values[0]
     )
-    
+
     if appendvlname:
         vl_df.columns = vl_df.columns.astype(str) + ".vl"
-    
+
     return vl_df
