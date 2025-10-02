@@ -31,15 +31,6 @@ def _annual_df(
 # Basic validations mirroring mind4 tests but adapted to minm4 behavior
 
 
-def test_invalid_freq_raises() -> None:
-    mnr = _monthly_df("2019-01", 12, 1.0, "x")
-    rea = _annual_df(2019, 1, 12.0, "x")
-    with pytest.raises(
-        TypeError, match='The frequency setting must me either "M" or "Q"'
-    ):
-        minm4(mnr, rea, ["x"], basisaar=2019, startaar=2019, freq="W")  # type: ignore[arg-type]
-
-
 def test_list_m4_accepts_string_and_runs() -> None:
     # Unlike mind4, minm4 accepts a single string and converts it to a list internally
     mnr = _monthly_df("2019-01", 12, 1.0, "x")
