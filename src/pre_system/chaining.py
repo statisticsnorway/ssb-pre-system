@@ -1,17 +1,3 @@
-# ---
-# jupyter:
-#   jupytext:
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.17.3
-#   kernelspec:
-#     display_name: Python 3 (ipykernel)
-#     language: python
-#     name: python3
-# ---
-
 import warnings
 
 import numpy as np
@@ -198,12 +184,12 @@ def chain_df(
         raise TypeError("The start year must be an integer.")
     if not isinstance(endyear, int):
         raise TypeError("The end year must be an integer.")
+    if not isinstance(baseyear, int):
+        raise TypeError("The base year must be an integer.")
     if endyear > 2099:
         raise TypeError(
             "The final year must be less than 2099. Are you sure you entered it correctly?."
         )
-    if not isinstance(baseyear, int):
-        raise TypeError("The base year must be an integer.")
     if baseyear > 2099:
         raise TypeError(
             "The final year must be less than 2099. Are you sure you entered it correctly?."
@@ -216,7 +202,9 @@ def chain_df(
     cum_product_df = ratio_df.cumprod()
 
     # Volume values
-    vl_df = (
+    if not isinstance(val_df_of_concern.index, pd.PeriodIndex):
+        raise TypeError("val_df_of_concern index must be a PeriodIndex.")
+    vl_df: pd.DataFrame = (
         cum_product_df
         * val_df_of_concern.loc[val_df_of_concern.index.year == baseyear].values[0]
         / cum_product_df.loc[val_df_of_concern.index.year == baseyear].values[0]

@@ -62,8 +62,6 @@ def minm4(
     """
     res_dict = {}
 
-    if isinstance(liste_m4, str):
-        liste_m4 = [liste_m4]
 
     if not (freq == "M" or freq == "Q"):
         raise TypeError('The frequency setting must me either "M" or "Q".')
@@ -76,10 +74,12 @@ def minm4(
 
     # CHECKS.
     # Checking object type.
-    if not isinstance(liste_m4, list) or isinstance(liste_m4, str):
+    if not (isinstance(liste_m4, list) or isinstance(liste_m4, str)):
         raise TypeError(
             "You need to create a list of all the series you wish to benchmark, and it must be in the form of a list or string."
         )
+    if isinstance(liste_m4, str):
+        liste_m4 = [liste_m4]
 
     # Checking the monthly DF.
     if not isinstance(mnr, pd.DataFrame):

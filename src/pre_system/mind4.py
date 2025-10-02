@@ -36,6 +36,8 @@ def mind4(
     and addresses edge cases such as missing values or invalid contents. The function
     allows scaling adjustments for leading and trailing periods using specified start and
     basis years, which determine the timeframe of analysis.
+    
+    Author: Vemund Rundberget, Seksjon for makroøkonomi, Forksningsavdelingen, SSB
 
     Args:
         mnr: DataFrame with monthly or quarterly data having a pd.PeriodIndex.
@@ -47,7 +49,14 @@ def mind4(
             Default is "M".
 
     Returns:
-        pd.DataFrame: DataFrame containing the benchmarking results, after MinD4 adjustments.
+        pd.DataFrame: Dataframe containing the benchmarking results, after MinD4 adjustments.
+
+    Raises:
+        TypeError: If freq is not "M" or "Q"; if liste_d4 is not a list or string;
+            if mnr/rea are not DataFrames with a PeriodIndex; if required series are
+            missing in mnr/rea; if startaar/basisaar are not integers, if basisaar >= 2050,
+            if basisaar < startaar, or if there are years present in the monthly/quarterly
+            data that are missing in the yearly data.
     """
     res_dict = {}
 
@@ -62,7 +71,7 @@ def mind4(
 
     # CHECKS.
     # Checking object type.
-    if not isinstance(liste_d4, list) or isinstance(liste_d4, str):
+    if not (isinstance(liste_d4, list) or isinstance(liste_d4, str)):
         raise TypeError(
             "You need to create a list of all the series you wish to benchmark, and it must be in the form of a list or string."
         )
@@ -207,7 +216,7 @@ def mind4(
         raise TypeError("The start year must be an integer.")
     if not isinstance(basisaar, int):
         raise TypeError("The final year must be an integer.")
-    if not basisaar < 2050:
+    if basisaar >= 2050:
         raise TypeError(
             "The final year must be less than 2050. Are you sure you entered it correctly?."
         )
