@@ -62,7 +62,7 @@ def mind4(
 
     # CHECKS.
     # Checking object type.
-    if not isinstance(liste_d4, list) or isinstance(liste_d4, str):
+    if not (isinstance(liste_d4, list) or isinstance(liste_d4, str)):
         raise TypeError(
             "You need to create a list of all the series you wish to benchmark, and it must be in the form of a list or string."
         )

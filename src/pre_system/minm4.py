@@ -74,7 +74,7 @@ def minm4(
 
     # CHECKS.
     # Checking object type.
-    if not isinstance(liste_m4, list) or isinstance(liste_m4, str):
+    if not (isinstance(liste_m4, list) or isinstance(liste_m4, str)):
         raise TypeError(
             "You need to create a list of all the series you wish to benchmark, and it must be in the form of a list or string."
         )
