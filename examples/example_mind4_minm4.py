@@ -21,6 +21,11 @@ np.set_printoptions(suppress=True)
 pd.set_option("display.float_format", "{:.0f}".format)
 
 # Importing the functions from the .py-files with the same name respectively.
+from examples.example_m_y_numbers import cols
+from examples.example_m_y_numbers import m_array
+from examples.example_m_y_numbers import m_index
+from examples.example_m_y_numbers import y_array
+from examples.example_m_y_numbers import y_index
 from src.pre_system.mind4 import mind4
 from src.pre_system.minm4 import minm4
 
@@ -40,15 +45,13 @@ y_df = pd.DataFrame(data=y_array, columns=cols)
 m_df.index = m_index
 y_df.index = y_index
 
-
-
-# %% jupyter={"outputs_hidden": true}
+# %%
 q_df = m_df.resample("Q").sum()
 
 # %% [markdown]
 # ## Value to be Benchmarked
 
-# %% jupyter={"outputs_hidden": true}
+# %%
 (m_df.resample("Y").sum() - y_df)
 
 # %% [markdown]
@@ -100,7 +103,7 @@ result_q_d4 = mind4(q_df, y_df, list_to_benchmarking, baseyear, firstyear, freq=
 # ### Monthly frequency
 
 # %%
-(result_d4 / m_df).plot()
+(result_d4 / m_df[list_to_benchmarking]).plot()
 
 # %%
 (result_m4 / m_df).plot()

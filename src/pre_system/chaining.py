@@ -167,7 +167,13 @@ def chain_df(
     serieslist = [
         serie
         for serie in serieslist
-        if serie not in (valintwarnlist+fpintwarnlist+fp_df_of_concern.columns[fp_df_of_concern.isna().any()].to_list()+val_df_of_concern.columns[val_df_of_concern.isna().any()].to_list())
+        if serie
+        not in (
+            valintwarnlist
+            + fpintwarnlist
+            + fp_df_of_concern.columns[fp_df_of_concern.isna().any()].to_list()
+            + val_df_of_concern.columns[val_df_of_concern.isna().any()].to_list()
+        )
     ]
 
     # Checking that start and end years are in range.

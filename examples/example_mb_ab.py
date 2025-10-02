@@ -15,8 +15,11 @@
 
 # %%
 import pandas as pd
-import numpy as np
-
+from examples.example_m_y_numbers import cols
+from examples.example_m_y_numbers import m_array
+from examples.example_m_y_numbers import m_index
+from examples.example_m_y_numbers import y_array
+from examples.example_m_y_numbers import y_index
 from src.pre_system.additive_benchmark import additive_benchmark
 from src.pre_system.multiplicative_benchmark import multiplicative_benchmark
 
@@ -30,15 +33,10 @@ m_df.index = m_index
 y_df.index = y_index
 
 # %%
-q_df = m_df.resample('Q').sum()
+q_df = m_df.resample("Q").sum()
 
 # %%
-m_df.loc['2016-3','serieA'] = 'abc'
-
-m_df
-
-# %%
-collist = ['serieA', 'serieB']
+collist = ["serieA", "serieB"]
 
 (additive_benchmark(m_df, y_df, collist, 2016, 2022) - m_df).plot()
 
@@ -46,12 +44,15 @@ collist = ['serieA', 'serieB']
 (multiplicative_benchmark(m_df, y_df, collist, 2016, 2022) / m_df).plot()
 
 # %%
-(multiplicative_benchmark(m_df, y_df, collist, 2016, 2022).resample('Y').sum()-additive_benchmark(m_df, y_df, collist, 2016, 2022).resample('Y').sum()).round(9)
+(
+    multiplicative_benchmark(m_df, y_df, collist, 2016, 2022).resample("Y").sum()
+    - additive_benchmark(m_df, y_df, collist, 2016, 2022).resample("Y").sum()
+).round(9)
 
 # %%
-multiplicative_benchmark(m_df, q_df, collist, 2016, 2022).resample('Q').sum()-q_df
+multiplicative_benchmark(m_df, q_df, collist, 2016, 2022).resample("Q").sum() - q_df
 
 # %%
-additive_benchmark(m_df, q_df, collist, 2016, 2022).resample('Q').sum()-q_df
+additive_benchmark(m_df, q_df, collist, 2016, 2022).resample("Q").sum() - q_df
 
 # %%

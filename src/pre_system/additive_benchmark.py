@@ -1,7 +1,8 @@
 # +
-import pandas as pd
-import numpy as np
 import warnings
+
+import numpy as np
+import pandas as pd
 
 warnings.simplefilter("ignore", category=FutureWarning)
 
@@ -11,10 +12,9 @@ def additive_benchmark(
     df_target: pd.DataFrame,
     liste_km: list[str] | str,
     startyear: int,
-    endyear: int
+    endyear: int,
 ) -> pd.DataFrame:
-    """
-    TLDR: Adjust values in df_target to match df_indicator with additive quota adjustment.
+    """TLDR: Adjust values in df_target to match df_indicator with additive quota adjustment.
 
     Adjust values in df_target to match df_indicator using additive quota adjustment.
 
@@ -35,12 +35,12 @@ def additive_benchmark(
         If True, raise an error if the time intervals are not of equal length.
         If False, issue a warning instead of raising an error. Default is True.
 
-    Returns
+    Returns:
     -------
     pd.DataFrame
         The adjusted df_indicator with the same frequency as the original df_target, with non-overlapping columns left untreated.
 
-    Raises
+    Raises:
     ------
     ValueError
         If either of the input DataFrames does not have a datetime or period index, or if df_target has a finer frequency
@@ -52,7 +52,7 @@ def additive_benchmark(
     UserWarning
         If strict_mode is False and the time intervals are not of equal length.
 
-    Examples
+    Examples:
     --------
     >>> import pandas as pd
     >>> df_target = pd.DataFrame({'value': [1, 2, 3, 4, 5, 6]}, index=pd.date_range(start='2022-01-01', periods=6, freq='M'))
@@ -94,13 +94,10 @@ def additive_benchmark(
 
     # Checking indeces.
     if not isinstance(df_indicator.index, pd.PeriodIndex):
-        raise TypeError(
-            "Index must be a pd.PeriodIndex in the indicator DataFrame."
-        )
+        raise TypeError("Index must be a pd.PeriodIndex in the indicator DataFrame.")
     if not isinstance(df_target.index, pd.PeriodIndex):
         raise TypeError("Index must be a pd.PeriodIndex in the target DataFrame.")
 
-    
     # Checking columns.
     if not pd.Series(liste_km).isin(df_indicator.columns).all():
         raise TypeError(
@@ -112,7 +109,9 @@ def additive_benchmark(
         )
 
     # Filters out series not sent to chaining.
-    df_indicator_of_concern = df_indicator[df_indicator.columns[df_indicator.columns.isin(liste_km)]]
+    df_indicator_of_concern = df_indicator[
+        df_indicator.columns[df_indicator.columns.isin(liste_km)]
+    ]
     df_indicator_of_concern = df_indicator_of_concern[
         (df_indicator_of_concern.index.year <= endyear)
         & (df_indicator_of_concern.index.year >= startyear)
@@ -142,7 +141,9 @@ def additive_benchmark(
         if (
             not pd.api.types.is_any_real_numeric_dtype(df_indicator_of_concern[col])
             and col
-            not in df_indicator_of_concern.columns[df_indicator_of_concern.isna().any()].to_list()
+            not in df_indicator_of_concern.columns[
+                df_indicator_of_concern.isna().any()
+            ].to_list()
         ):
             indicatorintwarnlist.append(f"{col}")
     if len(indicatorintwarnlist) > 0:
@@ -173,7 +174,9 @@ def additive_benchmark(
         if (
             not pd.api.types.is_any_real_numeric_dtype(df_target_of_concern[col])
             and col
-            not in df_target_of_concern.columns[df_target_of_concern.isna().any()].to_list()
+            not in df_target_of_concern.columns[
+                df_target_of_concern.isna().any()
+            ].to_list()
         ):
             targetintwarnlist.append(f"{col}")
     if len(targetintwarnlist) > 0:
@@ -182,7 +185,7 @@ def additive_benchmark(
             UserWarning,
             stacklevel=2,
         )
-    if df_target_of_concern.isna().any().any() is np.True_:  # NaN check. 
+    if df_target_of_concern.isna().any().any() is np.True_:  # NaN check.
         warnings.warn(
             f"There are NaN-values in {df_target_of_concern.columns[df_target_of_concern.isna().any()].to_list()} in the target dataframe. Skipping sending these to benchmarking.",
             UserWarning,
@@ -201,12 +204,24 @@ def additive_benchmark(
         [col for col in df_target_of_concern.columns if col not in indicatorintwarnlist]
     ]
     df_indicator_of_concern = df_indicator_of_concern[
-        [col for col in df_indicator_of_concern.columns if col not in indicatorintwarnlist]
+        [
+            col
+            for col in df_indicator_of_concern.columns
+            if col not in indicatorintwarnlist
+        ]
     ]
     liste_km = [
         serie
         for serie in liste_km
-        if serie not in (indicatorintwarnlist+targetintwarnlist+df_target_of_concern.columns[df_target_of_concern.isna().any()].to_list()+df_indicator_of_concern.columns[df_indicator_of_concern.isna().any()].to_list())
+        if serie
+        not in (
+            indicatorintwarnlist
+            + targetintwarnlist
+            + df_target_of_concern.columns[df_target_of_concern.isna().any()].to_list()
+            + df_indicator_of_concern.columns[
+                df_indicator_of_concern.isna().any()
+            ].to_list()
+        )
     ]
 
     # Logical checks.
@@ -221,16 +236,24 @@ def additive_benchmark(
         raise AssertionError("Selected end year not in the target dataframe.")
 
     # Aggregate df_indicator_of_concern to the frequency of df_target_of_concern
-    df_indicator_agg = (
-        df_indicator_of_concern.resample(df_target_of_concern.index.freqstr).sum()
-    )
+    df_indicator_agg = df_indicator_of_concern.resample(
+        df_target_of_concern.index.freqstr
+    ).sum()
 
     # Calculates amount of months in a quarter or year and so forth
-    num_periods = len(pd.period_range(
-        start=pd.Period(pd.Period("1900", df_target_of_concern.index.freqstr).start_time, df_indicator_of_concern.index.freqstr), 
-        end=  pd.Period(pd.Period("1900", df_target_of_concern.index.freqstr).end_time,   df_indicator_of_concern.index.freqstr), 
-        freq= df_indicator_of_concern.index.freqstr)
-                     )
+    num_periods = len(
+        pd.period_range(
+            start=pd.Period(
+                pd.Period("1900", df_target_of_concern.index.freqstr).start_time,
+                df_indicator_of_concern.index.freqstr,
+            ),
+            end=pd.Period(
+                pd.Period("1900", df_target_of_concern.index.freqstr).end_time,
+                df_indicator_of_concern.index.freqstr,
+            ),
+            freq=df_indicator_of_concern.index.freqstr,
+        )
+    )
 
     # Calculate the difference between df_indicator_of_concern and the aggregated df_target_of_concern
     diff = (df_target_of_concern - df_indicator_agg) / num_periods

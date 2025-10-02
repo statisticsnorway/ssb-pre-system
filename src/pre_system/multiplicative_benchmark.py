@@ -1,27 +1,27 @@
 # +
-import pandas as pd
-import numpy as np
 import warnings
 
+import numpy as np
+import pandas as pd
+
 warnings.simplefilter("ignore", category=FutureWarning)
+
 
 def multiplicative_benchmark(
     df_indicator: pd.DataFrame,
     df_target: pd.DataFrame,
     liste_km: list[str] | str,
     startyear: int,
-    endyear: int
+    endyear: int,
 ) -> pd.DataFrame:
-    """
-    Perform multiplicative benchmarking of high-frequency indicator data
-    against low-frequency target data over a given time range.
+    """Perform multiplicative benchmarking of high-frequency indicator data against low-frequency target data over a given time range.
 
     This method adjusts a high-frequency indicator series (e.g., monthly data)
     so that its aggregated values match a lower-frequency target series
     (e.g., annual data). The adjustment is multiplicative: indicators are
     divided by a ratio of their aggregated sums to the target values, and
     then interpolated back to the high-frequency index.
-    
+
     Author: Magnus Helliesen Kvåle and Vemund Rundberget, Seksjon for makroøkonomi, Forksningsavdelingen, SSB
 
     Parameters
@@ -38,38 +38,38 @@ def multiplicative_benchmark(
     startyear : int
         The starting year (inclusive) of the benchmarking period.
     endyear : int
-        The ending year (inclusive) of the benchmarking period. 
+        The ending year (inclusive) of the benchmarking period.
         Must be <= 2099.
 
-    Returns
+    Returns:
     -------
     pd.DataFrame
         A DataFrame with the benchmarked indicator series, indexed by the
         same frequency as `df_indicator`.
 
-    Raises
+    Raises:
     ------
     TypeError
-        If the inputs are not DataFrames, indices not PeriodIndex, 
+        If the inputs are not DataFrames, indices not PeriodIndex,
         or if the parameters are of incorrect type.
     AssertionError
-        If the chosen start or end years are not available in either 
+        If the chosen start or end years are not available in either
         the indicator or target DataFrames.
     UserWarning
         Issued if zero-only series, non-numeric values, or NaNs are
         detected in the input data.
 
-    Notes
+    Notes:
     -----
-    - Any series containing only zeros, non-numeric values, or NaNs 
+    - Any series containing only zeros, non-numeric values, or NaNs
       will be excluded from benchmarking.
-    - The method ensures consistency: the sum of the adjusted indicator 
-      series over a target period will exactly match the corresponding 
+    - The method ensures consistency: the sum of the adjusted indicator
+      series over a target period will exactly match the corresponding
       target value.
     - This is equivalent to the multiplicative Denton method used in
       temporal disaggregation of time series.
 
-    Examples
+    Examples:
     --------
     >>> import pandas as pd
     >>> idx_monthly = pd.period_range("2018-01", "2019-12", freq="M")
@@ -100,13 +100,10 @@ def multiplicative_benchmark(
 
     # Checking indeces.
     if not isinstance(df_indicator.index, pd.PeriodIndex):
-        raise TypeError(
-            "Index must be a pd.PeriodIndex in the indicator DataFrame."
-        )
+        raise TypeError("Index must be a pd.PeriodIndex in the indicator DataFrame.")
     if not isinstance(df_target.index, pd.PeriodIndex):
         raise TypeError("Index must be a pd.PeriodIndex in the target DataFrame.")
 
-    
     # Checking columns.
     if not pd.Series(liste_km).isin(df_indicator.columns).all():
         raise TypeError(
@@ -118,7 +115,9 @@ def multiplicative_benchmark(
         )
 
     # Filters out series not sent to chaining.
-    df_indicator_of_concern = df_indicator[df_indicator.columns[df_indicator.columns.isin(liste_km)]]
+    df_indicator_of_concern = df_indicator[
+        df_indicator.columns[df_indicator.columns.isin(liste_km)]
+    ]
     df_indicator_of_concern = df_indicator_of_concern[
         (df_indicator_of_concern.index.year <= endyear)
         & (df_indicator_of_concern.index.year >= startyear)
@@ -148,7 +147,9 @@ def multiplicative_benchmark(
         if (
             not pd.api.types.is_any_real_numeric_dtype(df_indicator_of_concern[col])
             and col
-            not in df_indicator_of_concern.columns[df_indicator_of_concern.isna().any()].to_list()
+            not in df_indicator_of_concern.columns[
+                df_indicator_of_concern.isna().any()
+            ].to_list()
         ):
             indicatorintwarnlist.append(f"{col}")
     if len(indicatorintwarnlist) > 0:
@@ -179,7 +180,9 @@ def multiplicative_benchmark(
         if (
             not pd.api.types.is_any_real_numeric_dtype(df_target_of_concern[col])
             and col
-            not in df_target_of_concern.columns[df_target_of_concern.isna().any()].to_list()
+            not in df_target_of_concern.columns[
+                df_target_of_concern.isna().any()
+            ].to_list()
         ):
             targetintwarnlist.append(f"{col}")
     if len(targetintwarnlist) > 0:
@@ -188,7 +191,7 @@ def multiplicative_benchmark(
             UserWarning,
             stacklevel=2,
         )
-    if df_target_of_concern.isna().any().any() is np.True_:  # NaN check. 
+    if df_target_of_concern.isna().any().any() is np.True_:  # NaN check.
         warnings.warn(
             f"There are NaN-values in {df_target_of_concern.columns[df_target_of_concern.isna().any()].to_list()} in the target dataframe. Skipping sending these to benchmarking.",
             UserWarning,
@@ -207,12 +210,24 @@ def multiplicative_benchmark(
         [col for col in df_target_of_concern.columns if col not in indicatorintwarnlist]
     ]
     df_indicator_of_concern = df_indicator_of_concern[
-        [col for col in df_indicator_of_concern.columns if col not in indicatorintwarnlist]
+        [
+            col
+            for col in df_indicator_of_concern.columns
+            if col not in indicatorintwarnlist
+        ]
     ]
     liste_km = [
         serie
         for serie in liste_km
-        if serie not in (indicatorintwarnlist+targetintwarnlist+df_target_of_concern.columns[df_target_of_concern.isna().any()].to_list()+df_indicator_of_concern.columns[df_indicator_of_concern.isna().any()].to_list())
+        if serie
+        not in (
+            indicatorintwarnlist
+            + targetintwarnlist
+            + df_target_of_concern.columns[df_target_of_concern.isna().any()].to_list()
+            + df_indicator_of_concern.columns[
+                df_indicator_of_concern.isna().any()
+            ].to_list()
+        )
     ]
 
     # Logical checks.
@@ -228,16 +243,18 @@ def multiplicative_benchmark(
 
     df_ratio = (
         df_indicator_of_concern.groupby(
-            pd.PeriodIndex(df_indicator_of_concern.index, freq=df_target_of_concern.index.freq)
+            pd.PeriodIndex(
+                df_indicator_of_concern.index, freq=df_target_of_concern.index.freq
+            )
         )
         .sum()
         .div(df_target_of_concern)
         .resample(df_indicator_of_concern.index.freq)
         .ffill()
     )
-    
-    res_df = df_indicator_of_concern.div(df_ratio.fillna(1).reindex(df_indicator_of_concern.index))[
-        df_indicator_of_concern.columns
-    ]
+
+    res_df = df_indicator_of_concern.div(
+        df_ratio.fillna(1).reindex(df_indicator_of_concern.index)
+    )[df_indicator_of_concern.columns]
 
     return res_df

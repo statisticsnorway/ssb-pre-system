@@ -81,9 +81,7 @@ def mind4(
         )
 
     # Filters out series not sent to benchmarking.
-    mnr_of_concern = mnr[
-        mnr.columns[mnr.columns.isin(liste_d4)]
-    ]  
+    mnr_of_concern = mnr[mnr.columns[mnr.columns.isin(liste_d4)]]
     mnr_of_concern = mnr_of_concern[
         (mnr_of_concern.index.year <= basisaar)
         & (mnr_of_concern.index.year >= startaar)
@@ -132,9 +130,7 @@ def mind4(
         )
 
     # Filters out series not sent to benchmarking.
-    rea_of_concern = rea[
-        rea.columns[rea.columns.isin(liste_d4)]
-    ]  
+    rea_of_concern = rea[rea.columns[rea.columns.isin(liste_d4)]]
     rea_of_concern = rea_of_concern[
         (rea_of_concern.index.year <= basisaar)
         & (rea_of_concern.index.year >= startaar)
@@ -188,7 +184,13 @@ def mind4(
     liste_d4 = [
         serie
         for serie in liste_d4
-        if serie not in (reaintwarnlist+mnrintwarnlist+mnr_of_concern.columns[mnr_of_concern.isna().any()].to_list()+rea_of_concern.columns[rea_of_concern.isna().any()].to_list())
+        if serie
+        not in (
+            reaintwarnlist
+            + mnrintwarnlist
+            + mnr_of_concern.columns[mnr_of_concern.isna().any()].to_list()
+            + rea_of_concern.columns[rea_of_concern.isna().any()].to_list()
+        )
     ]
 
     if (

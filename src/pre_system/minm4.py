@@ -38,7 +38,7 @@ def minm4(
     and numerical properties.
 
     Author: Vemund Rundberget, Seksjon for makroøkonomi, Forksningsavdelingen, SSB
-    
+
     Args:
         mnr: DataFrame containing monthly or quarterly data to be benchmarked.
             The index must be a pandas PeriodIndex.
@@ -90,7 +90,7 @@ def minm4(
         raise TypeError(
             f"{np.setdiff1d(liste_m4, mnr.columns).tolist()} are missing in the {periodely} dataframe."
         )
-    
+
     mnr_of_concern = mnr[
         mnr.columns[mnr.columns.isin(liste_m4)]
     ]  # Filters out series not sent to benchmarking.
@@ -142,9 +142,7 @@ def minm4(
         )
 
     # Filters out series not sent to benchmarking.
-    rea_of_concern = rea[
-        rea.columns[rea.columns.isin(liste_m4)]
-    ]  
+    rea_of_concern = rea[rea.columns[rea.columns.isin(liste_m4)]]
     rea_of_concern = rea_of_concern[
         (rea_of_concern.index.year <= basisaar)
         & (rea_of_concern.index.year >= startaar)
@@ -198,7 +196,13 @@ def minm4(
     liste_m4 = [
         serie
         for serie in liste_m4
-        if serie not in (reaintwarnlist+mnrintwarnlist+mnr_of_concern.columns[mnr_of_concern.isna().any()].to_list()+rea_of_concern.columns[rea_of_concern.isna().any()].to_list())
+        if serie
+        not in (
+            reaintwarnlist
+            + mnrintwarnlist
+            + mnr_of_concern.columns[mnr_of_concern.isna().any()].to_list()
+            + rea_of_concern.columns[rea_of_concern.isna().any()].to_list()
+        )
     ]
 
     if (
