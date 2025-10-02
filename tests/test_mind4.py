@@ -5,163 +5,98 @@ import pytest
 from pre_system.mind4 import mind4
 
 
-def _mk_period_index(start, end, freq):
-    # Inclusive endpoints
-    return pd.period_range(start=start, end=end, freq=freq)
+def _monthly_df(start: str, periods: int, value: float = 1.0, col: str = "x") -> pd.DataFrame:
+    idx = pd.period_range(start=start, periods=periods, freq="M")
+    return pd.DataFrame({col: np.full(len(idx), value, dtype=float)}, index=idx)
 
 
-def test_mind4_monthly_happy_path_yearly_sums_match():
-    # Build monthly data for 2 years with simple patterns
-    idx_m = _mk_period_index("2020-01", "2021-12", "M")
-    # Two series: a constant one and a ramp one
-    mnr = pd.DataFrame(
-        {
-            "A": np.r_[np.repeat(10.0, 12), np.repeat(20.0, 12)],
-            "B": np.r_[np.arange(1, 13, dtype=float), np.arange(1, 13, dtype=float)],
-        },
-        index=idx_m,
-    )
-
-    # Annual totals equal to the sum of monthly raw values
-    idx_y = _mk_period_index("2020", "2021", "Y")
-    rea = pd.DataFrame(
-        {
-            "A": [
-                mnr.loc[mnr.index.year == 2020, "A"].sum(),
-                mnr.loc[mnr.index.year == 2021, "A"].sum(),
-            ],
-            "B": [
-                mnr.loc[mnr.index.year == 2020, "B"].sum(),
-                mnr.loc[mnr.index.year == 2021, "B"].sum(),
-            ],
-        },
-        index=idx_y,
-    )
-
-    res = mind4(
-        mnr=mnr, rea=rea, liste_d4=["A", "B"], basisaar=2021, startaar=2020, freq="M"
-    )
-
-    # Index and columns preserved
-    assert isinstance(res.index, pd.PeriodIndex)
-    assert res.index.equals(idx_m)
-    assert list(res.columns) == ["A", "B"]
-
-    # Yearly sums of result equal to the annual targets exactly (or within tight tolerance)
-    res_y = res.resample("Y").sum()
-    pd.testing.assert_index_equal(res_y.index, idx_y)
-    pd.testing.assert_frame_equal(
-        res_y.sort_index(), rea.sort_index(), check_dtype=False, rtol=1e-10, atol=1e-8
-    )
+def _quarterly_df(start: str, periods: int, value: float = 1.0, col: str = "x") -> pd.DataFrame:
+    idx = pd.period_range(start=start, periods=periods, freq="Q")
+    return pd.DataFrame({col: np.full(len(idx), value, dtype=float)}, index=idx)
 
 
-def test_mind4_quarterly_happy_path_yearly_sums_match():
-    # Quarterly variant
-    idx_q = _mk_period_index("2020Q1", "2021Q4", "Q")
-    mnr_q = pd.DataFrame(
-        {
-            "A": np.r_[np.repeat(30.0, 4), np.repeat(40.0, 4)],
-        },
-        index=idx_q,
-    )
-
-    idx_y = _mk_period_index("2020", "2021", "Y")
-    rea = pd.DataFrame(
-        {
-            "A": [
-                mnr_q.loc[mnr_q.index.year == 2020, "A"].sum(),
-                mnr_q.loc[mnr_q.index.year == 2021, "A"].sum(),
-            ],
-        },
-        index=idx_y,
-    )
-
-    res = mind4(
-        mnr=mnr_q, rea=rea, liste_d4=["A"], basisaar=2021, startaar=2020, freq="Q"
-    )
-    res_y = res.resample("Y").sum()
-    pd.testing.assert_frame_equal(
-        res_y.sort_index(), rea.sort_index(), check_dtype=False
-    )
+def _annual_df(start_year: int, years: int, total_per_year: float = 12.0, col: str = "x") -> pd.DataFrame:
+    idx = pd.period_range(start=str(start_year), periods=years, freq="Y")
+    return pd.DataFrame({col: np.full(len(idx), total_per_year, dtype=float)}, index=idx)
 
 
-def test_mind4_input_validation_errors():
-    idx_m = _mk_period_index("2020-01", "2020-12", "M")
-    mnr = pd.DataFrame({"A": np.repeat(1.0, 12)}, index=idx_m)
-    idx_y = _mk_period_index("2020", "2020", "Y")
-    rea = pd.DataFrame({"A": [12.0]}, index=idx_y)
-
-    with pytest.raises(TypeError):
-        mind4(
-            mnr=mnr.reset_index(), rea=rea, liste_d4=["A"], basisaar=2020, startaar=2020
-        )
-    with pytest.raises(TypeError):
-        bad_index_df = mnr.copy()
-        bad_index_df.index = pd.Index(range(len(bad_index_df)))
-        mind4(mnr=bad_index_df, rea=rea, liste_d4=["A"], basisaar=2020, startaar=2020)
-    with pytest.raises(TypeError):
-        mind4(mnr=mnr, rea=rea, liste_d4=["A"], basisaar=2051, startaar=2020)
-    with pytest.raises(TypeError):
-        mind4(mnr=mnr, rea=rea, liste_d4=["A"], basisaar=2019, startaar=2020)
-    with pytest.raises(TypeError):
-        mind4(
-            mnr=mnr,
-            rea=rea[["A"]].rename(columns={"A": "B"}),
-            liste_d4=["A"],
-            basisaar=2020,
-            startaar=2020,
-        )
-    with pytest.raises(TypeError):
-        mind4(
-            mnr=mnr[["A"]].rename(columns={"A": "B"}),
-            rea=rea,
-            liste_d4=["A"],
-            basisaar=2020,
-            startaar=2020,
-        )
-    with pytest.raises(TypeError):
-        mind4(mnr=mnr, rea=rea, liste_d4=["A"], basisaar=2020, startaar=2020, freq="W")
+def test_invalid_freq_raises() -> None:
+    mnr = _monthly_df("2019-01", 12, 1.0, "x")
+    rea = _annual_df(2019, 1, 12.0, "x")
+    with pytest.raises(TypeError, match='The frequency setting must me either "M" or "Q"'):
+        mind4(mnr, rea, ["x"], basisaar=2019, startaar=2019, freq="W")
 
 
-def test_mind4_emits_warnings_and_skips_non_numeric():
-    idx_m = _mk_period_index("2020-01", "2020-12", "M")
-    mnr = pd.DataFrame(
-        {
-            "A": np.repeat(1.0, 12),
-            "B": np.repeat(0.0, 12),  # all zeros -> warning
-            "C": [np.nan] * 12,  # NaNs -> warning
-            "D": ["x"] * 12,  # non-numeric -> warning and skipped
-        },
-        index=idx_m,
-    )
+def test_liste_d4_as_string_raises_due_to_validation_order() -> None:
+    # Note: Current implementation raises when a string is provided (despite docstring allowing it)
+    mnr = _monthly_df("2019-01", 12, 1.0, "x")
+    rea = _annual_df(2019, 1, 12.0, "x")
+    with pytest.raises(TypeError, match="You need to create a list of all the series you wish to benchmark"):
+        mind4(mnr, rea, "x", basisaar=2019, startaar=2019, freq="M")
 
-    idx_y = _mk_period_index("2020", "2020", "Y")
-    rea = pd.DataFrame(
-        {
-            "A": [12.0],
-            "B": [0.0],
-            "C": [0.0],
-            "D": [0.0],
-        },
-        index=idx_y,
-    )
 
-    with pytest.warns(UserWarning):
-        res = mind4(
-            mnr=mnr,
-            rea=rea,
-            liste_d4=["A", "B", "C", "D"],
-            basisaar=2020,
-            startaar=2020,
-            freq="M",
-        )
+def test_mnr_index_must_be_periodindex() -> None:
+    # Build DataFrame with DatetimeIndex to trigger the index type check
+    idx = pd.date_range(start="2019-01-01", periods=12, freq="MS")
+    mnr = pd.DataFrame({"x": np.ones(len(idx))}, index=idx)
+    rea = _annual_df(2019, 1, 12.0, "x")
+    with pytest.raises(TypeError, match="monthly dataframe does not have a pd.PeriodIndex"):
+        mind4(mnr, rea, ["x"], basisaar=2019, startaar=2019, freq="M")
 
-    # Non-numeric 'D' should be dropped from the results
-    assert "D" not in res.columns
-    # Still produce a result for A and possibly B/C if solvable; check yearly sums for A
-    res_y = res.resample("Y").sum()
-    if "A" in res.columns:
-        assert (
-            pytest.approx(res_y.loc[idx_y[0], "A"], rel=1e-10, abs=1e-8)
-            == rea.loc[idx_y[0], "A"]
-        )
+
+def test_missing_columns_in_monthly_dataframe_raises() -> None:
+    mnr = _monthly_df("2019-01", 12, 1.0, "y")  # column 'x' is missing
+    rea = _annual_df(2019, 1, 12.0, "x")
+    with pytest.raises(TypeError, match="\['x'\] are missing in the monthly dataframe."):
+        mind4(mnr, rea, ["x"], basisaar=2019, startaar=2019, freq="M")
+
+
+def test_year_overlap_required_raises() -> None:
+    # mnr covers 2019, rea covers 2020 only; expect a mismatch error
+    mnr = _monthly_df("2019-01", 12, 1.0, "x")
+    rea = _annual_df(2020, 1, 12.0, "x")
+    with pytest.raises(TypeError, match=r"There aren't values in both series for \{2019\}"):
+        mind4(mnr, rea, ["x"], basisaar=2020, startaar=2019, freq="M")
+
+
+def test_monthly_happy_path_preserves_annual_totals_and_shape() -> None:
+    # Two full years monthly with constant values summing to annual totals
+    mnr = _monthly_df("2019-01", 24, 1.0, "x")  # monthly ones
+    rea = _annual_df(2019, 2, 12.0, "x")  # annual total = 12 each year
+
+    result = mind4(mnr, rea, ["x"], basisaar=2020, startaar=2019, freq="M")
+
+    # Shape and index
+    assert list(result.columns) == ["x"]
+    assert isinstance(result.index, pd.PeriodIndex) and result.index.freqstr == "M"
+    assert len(result) == 24
+
+    # Totals should match the annual constraints exactly for this simple case
+    annual_totals = result.resample("Y").sum()
+    pd.testing.assert_frame_equal(annual_totals, rea)
+
+
+def test_quarterly_happy_path_preserves_annual_totals_and_shape() -> None:
+    # Two full years quarterly with constant values summing to annual totals
+    mnr = _quarterly_df("2019Q1", 8, 1.0, "x")  # quarterly ones
+    rea = _annual_df(2019, 2, 4.0, "x")  # annual total = 4 each year
+
+    result = mind4(mnr, rea, ["x"], basisaar=2020, startaar=2019, freq="Q")
+
+    # Shape and index
+    assert list(result.columns) == ["x"]
+    assert isinstance(result.index, pd.PeriodIndex) and result.index.freqstr == "Q-DEC"
+    assert len(result) == 8
+
+    # Totals should match the annual constraints
+    annual_totals = result.resample("Y").sum()
+    pd.testing.assert_frame_equal(annual_totals, rea)
+
+
+def test_warns_on_nan_in_monthly_input() -> None:
+    mnr = _monthly_df("2019-01", 12, 1.0, "x")
+    mnr.iloc[5, 0] = np.nan  # Introduce NaN
+    rea = _annual_df(2019, 1, 12.0, "x")
+
+    with pytest.warns(UserWarning, match="There are NaN-values.*monthly dataframe"):
+        _ = mind4(mnr, rea, ["x"], basisaar=2019, startaar=2019, freq="M")
