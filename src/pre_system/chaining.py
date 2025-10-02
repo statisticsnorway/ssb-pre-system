@@ -208,7 +208,7 @@ def chain_df(
     # Volume values
     if not isinstance(val_df_of_concern.index, pd.PeriodIndex):
         raise TypeError("val_df_of_concern index must be a PeriodIndex.")
-    vl_df = (
+    vl_df: pd.DataFrame = (
         cum_product_df
         * val_df_of_concern.loc[val_df_of_concern.index.year == baseyear].values[0]
         / cum_product_df.loc[val_df_of_concern.index.year == baseyear].values[0]

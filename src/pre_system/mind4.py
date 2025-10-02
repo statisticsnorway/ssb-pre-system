@@ -79,10 +79,11 @@ def mind4(
     mnr_of_concern = mnr[
         mnr.columns[mnr.columns.isin(liste_d4)]
     ]  # Filters out series not sent to benchmarking.
-    mnr_of_concern = mnr_of_concern[
-        (mnr_of_concern.index.year <= basisaar)
-        & (mnr_of_concern.index.year >= startaar)
-    ]
+    mask_mnr = (
+        (mnr_of_concern.index.year <= basisaar)  # type: ignore[attr-defined]
+        & (mnr_of_concern.index.year >= startaar)  # type: ignore[attr-defined]
+    )
+    mnr_of_concern = mnr_of_concern.loc[mask_mnr, :]
 
     if not pd.Series(liste_d4).isin(mnr.columns).all():
         raise TypeError(
@@ -129,10 +130,11 @@ def mind4(
     rea_of_concern = rea[
         rea.columns[rea.columns.isin(liste_d4)]
     ]  # Filters out series not sent to benchmarking.
-    rea_of_concern = rea_of_concern[
-        (rea_of_concern.index.year <= basisaar)
-        & (rea_of_concern.index.year >= startaar)
-    ]
+    mask_rea = (
+        (rea_of_concern.index.year <= basisaar)  # type: ignore[attr-defined]
+        & (rea_of_concern.index.year >= startaar)  # type: ignore[attr-defined]
+    )
+    rea_of_concern = rea_of_concern.loc[mask_rea, :]
 
     if not pd.Series(liste_d4).isin(rea.columns).all():
         raise TypeError(
@@ -189,21 +191,19 @@ def mind4(
         if serie not in reaintwarnlist and serie not in mnrintwarnlist
     ]
 
-    if (
-        not set(mnr_of_concern.index.year.unique()).difference(
-            set(rea_of_concern.index.year)
-        )
-        == set()
-    ):
+    m_years = set(mnr_of_concern.index.year.unique())
+    r_years = set(rea_of_concern.index.year)
+    missing_years = m_years.difference(r_years)
+    if missing_years != set():
         raise TypeError(
-            f"There aren't values in both series for {set(mnr_of_concern.index.year.unique()).difference(set(rea_of_concern.index.year))}."
+            f"There aren't values in both series for {missing_years}."
         )
 
     if not isinstance(startaar, int):
         raise TypeError("The start year must be an integer.")
     if not isinstance(basisaar, int):
         raise TypeError("The final year must be an integer.")
-    if not basisaar < 2050:
+    if basisaar >= 2050:
         raise TypeError(
             "The final year must be less than 2050. Are you sure you entered it correctly?."
         )
@@ -262,8 +262,8 @@ def mind4(
         # Scaling of the following value.
         dataye = avstemming2 * datame
 
-        datam = np.hstack((datamf, datam_, datame))
-        datay = np.hstack((datayf, datay_, dataye))
+        datam = np.hstack((np.asarray(datamf), np.asarray(datam_), np.asarray(datame)))
+        datay = np.hstack((np.asarray(datayf), np.asarray(datay_), np.asarray(dataye)))
 
         # Counting months/quarters and years.
         nm = datam.shape[0]
@@ -319,10 +319,11 @@ def mind4(
         + rea_of_concern.columns[rea_of_concern.isna().any()].to_list()
     )
     for elem in set(liste_d4) - set(skippe):
-        if (
+        cond = (
             ((res.resample("Y").sum() - rea_of_concern) >= -1)
             & ((res.resample("Y").sum() - rea_of_concern) <= 1)
-        ).all()[elem] is not np.True_:
+        ).all()[elem]
+        if not bool(cond):
             warnings.warn(
                 f"There are deviations on the benchmarked totals in {elem} so something did not go well.",
                 UserWarning,

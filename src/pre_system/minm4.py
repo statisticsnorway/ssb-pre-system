@@ -60,9 +60,6 @@ def minm4(
     """
     res_dict = {}
 
-    if isinstance(liste_m4, str):
-        liste_m4 = [liste_m4]
-
     if not (freq == "M" or freq == "Q"):
         raise TypeError('The frequency setting must me either "M" or "Q".')
     if freq == "M":
@@ -79,6 +76,9 @@ def minm4(
             "You need to create a list of all the series you wish to benchmark, and it must be in the form of a list or string."
         )
 
+    if isinstance(liste_m4, str):
+        liste_m4 = [liste_m4]
+
     # Checking the monthly DF.
     if not isinstance(mnr, pd.DataFrame):
         raise TypeError(f"The {periodely} dataframe is not a DataFrame.")
@@ -88,10 +88,11 @@ def minm4(
     mnr_of_concern = mnr[
         mnr.columns[mnr.columns.isin(liste_m4)]
     ]  # Filters out series not sent to benchmarking.
-    mnr_of_concern = mnr_of_concern[
-        (mnr_of_concern.index.year <= basisaar)
-        & (mnr_of_concern.index.year >= startaar)
-    ]
+    mask_mnr = (
+        (mnr_of_concern.index.year <= basisaar)  # type: ignore[attr-defined]
+        & (mnr_of_concern.index.year >= startaar)  # type: ignore[attr-defined]
+    )
+    mnr_of_concern = mnr_of_concern.loc[mask_mnr, :]
 
     if not pd.Series(liste_m4).isin(mnr.columns).all():
         raise TypeError(
@@ -138,10 +139,11 @@ def minm4(
     rea_of_concern = rea[
         rea.columns[rea.columns.isin(liste_m4)]
     ]  # Filters out series not sent to benchmarking.
-    rea_of_concern = rea_of_concern[
-        (rea_of_concern.index.year <= basisaar)
-        & (rea_of_concern.index.year >= startaar)
-    ]
+    mask_rea = (
+        (rea_of_concern.index.year <= basisaar)  # type: ignore[attr-defined]
+        & (rea_of_concern.index.year >= startaar)  # type: ignore[attr-defined]
+    )
+    rea_of_concern = rea_of_concern.loc[mask_rea, :]
 
     if not pd.Series(liste_m4).isin(rea.columns).all():
         raise TypeError(
@@ -198,14 +200,12 @@ def minm4(
         if serie not in reaintwarnlist and serie not in mnrintwarnlist
     ]
 
-    if (
-        not set(mnr_of_concern.index.year.unique()).difference(
-            set(rea_of_concern.index.year)
-        )
-        == set()
-    ):
+    m_years = set(mnr_of_concern.index.year.unique())
+    r_years = set(rea_of_concern.index.year)
+    missing_years = m_years.difference(r_years)
+    if missing_years != set():
         raise TypeError(
-            f"There aren't values in both series for {set(mnr_of_concern.index.year.unique()).difference(set(rea_of_concern.index.year))}."
+            f"There aren't values in both series for {missing_years}."
         )
 
     if not isinstance(startaar, int):
@@ -235,8 +235,8 @@ def minm4(
         # Defines the monthly and yearly values.
         datam_ = mnr_of_concern[elem].values
         datay_ = rea_of_concern[elem].values
-        datam = np.hstack([datam_])
-        datay = np.hstack([datay_])
+        datam = np.hstack([np.asarray(datam_)])
+        datay = np.hstack([np.asarray(datay_)])
 
         # Counting months and years.
         nm = datam.shape[0]
@@ -289,10 +289,11 @@ def minm4(
         + rea_of_concern.columns[rea_of_concern.isna().any()].to_list()
     )
     for elem in set(liste_m4) - set(skippe):
-        if (
+        cond = (
             ((res.resample("Y").sum() - rea_of_concern) >= -1)
             & ((res.resample("Y").sum() - rea_of_concern) <= 1)
-        ).all()[elem] is not np.True_:
+        ).all()[elem]
+        if not bool(cond):
             warnings.warn(
                 f"There are deviations on the benchmarked totals in {elem} so something did not go well.",
                 UserWarning,

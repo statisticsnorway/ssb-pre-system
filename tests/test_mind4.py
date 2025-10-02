@@ -27,12 +27,16 @@ def test_invalid_freq_raises() -> None:
         mind4(mnr, rea, ["x"], basisaar=2019, startaar=2019, freq="W")  # type: ignore[arg-type]
 
 
-def test_list_d4_as_string_raises_due_to_validation_order() -> None:
-    # Note: Current implementation raises when a string is provided (despite docstring allowing it)
+def test_list_d4_accepts_string_and_runs() -> None:
     mnr = _monthly_df("2019-01", 12, 1.0, "x")
     rea = _annual_df(2019, 1, 12.0, "x")
-    with pytest.raises(TypeError, match="You need to create a list of all the series you wish to benchmark"):
-        mind4(mnr, rea, "x", basisaar=2019, startaar=2019, freq="M")
+
+    result = mind4(mnr, rea, "x", basisaar=2019, startaar=2019, freq="M")
+
+    assert list(result.columns) == ["x"]
+    assert isinstance(result.index, pd.PeriodIndex) and result.index.freqstr == "M"
+    assert len(result) == 12
+    pd.testing.assert_frame_equal(result.resample("Y").sum(), rea)
 
 
 def test_mnr_index_must_be_periodindex() -> None:
