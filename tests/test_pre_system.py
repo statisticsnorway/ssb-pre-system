@@ -8,6 +8,10 @@ from pre_system.pre_system import PreSystem
 from tests.conftest import Formulas
 
 
+def _assert_is_none(x: object) -> None:
+    assert x is None
+
+
 def test_formulas(
     formulas: Formulas,
     annual_df: pd.DataFrame,
@@ -19,11 +23,11 @@ def test_formulas(
         pre_system.add_formula(formula)
 
     assert len(pre_system.formulae) == 8
-    assert pre_system.baseyear is None
-    assert pre_system.annuals_df is None
-    assert pre_system.indicators_df is None
-    assert pre_system.weights_df is None
-    assert pre_system.corrections_df is None
+    _assert_is_none(pre_system.baseyear)
+    _assert_is_none(pre_system.annuals_df)
+    _assert_is_none(pre_system.indicators_df)
+    _assert_is_none(pre_system.weights_df)
+    _assert_is_none(pre_system.corrections_df)
 
     pre_system.baseyear = 2020
     assert pre_system.baseyear is not None

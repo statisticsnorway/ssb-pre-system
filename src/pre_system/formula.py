@@ -889,10 +889,10 @@ class FSumProd(Formula):
             # The sum function returns an int if there are no elements to sum.
             # Make it return an empty pd.Series instead, if this is the case.
             formulae_values = [
-                x.evaluate(*all_dfs, test_dfs=test_dfs) * y  # type: ignore [operator]
+                x.evaluate(*all_dfs, test_dfs=test_dfs) * y
                 for x, y in zip(self._formulae, self._weights, strict=True)
             ]
-            return sum(formulae_values) if formulae_values else pd.Series()  # type: ignore
+            return sum(formulae_values) if formulae_values else pd.Series()
         raise TypeError("All weights must be str or float")
 
 
