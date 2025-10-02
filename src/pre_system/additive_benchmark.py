@@ -1,6 +1,9 @@
 # +
 import pandas as pd
 import numpy as np
+import warnings
+
+warnings.simplefilter("ignore", category=FutureWarning)
 
 
 def additive_benchmark(
@@ -20,7 +23,7 @@ def additive_benchmark(
     corresponding periods in df_target, and adding the difference to df_target. The adjusted df_indicator is then returned,
     with non-overlapping columns left untreated.
 
-    Author: Benedikt Goodman, Seksjon for Nasjonalregnskap
+    Author: Benedikt Goodman, Seksjon for Nasjonalregnskap and Vemund Rundberget, Seksjon for makroøkonomi, Forksningsavdelingen, SSB
 
     Parameters
     ----------
@@ -65,26 +68,177 @@ def additive_benchmark(
         2022-06-30   8.5        20
 
     """
-    # Aggregate df_target_of_concern to the frequency of df_indicator_of_concern
+    # Checking object types.
+    if not isinstance(df_indicator, pd.DataFrame):
+        raise TypeError("The indicator dataframe is not a pd.DataFrame.")
+    else:
+        pass
+    if not isinstance(df_target, pd.DataFrame):
+        raise TypeError("The target dataframe is not a pd.DataFrame.")
+    else:
+        pass
+    if not isinstance(liste_km, list) or isinstance(liste_km, str):
+        raise TypeError(
+            "You need to create a list of all the series you wish to benchmark, and it must be in the form of a list or string."
+        )
+    if isinstance(liste_km, str):
+        liste_km = [liste_km]
+    if not isinstance(startyear, int):
+        raise TypeError("The start year must be an integer.")
+    if not isinstance(endyear, int):
+        raise TypeError("The end year must be an integer.")
+    if endyear > 2099:
+        raise TypeError(
+            "The final year must be less than 2099. Are you sure you entered it correctly?."
+        )
+
+    # Checking indeces.
+    if not isinstance(df_indicator.index, pd.PeriodIndex):
+        raise TypeError(
+            "Index must be a pd.PeriodIndex in the indicator DataFrame."
+        )
+    if not isinstance(df_target.index, pd.PeriodIndex):
+        raise TypeError("Index must be a pd.PeriodIndex in the target DataFrame.")
+
+    
+    # Checking columns.
+    if not pd.Series(liste_km).isin(df_indicator.columns).all():
+        raise TypeError(
+            f"{np.setdiff1d(liste_km, df_indicator.columns).tolist()} are missing in the indicator dataframe."
+        )
+    if not pd.Series(liste_km).isin(df_target.columns).all():
+        raise TypeError(
+            f"{np.setdiff1d(liste_km, df_target.columns).tolist()} are missing in the target dataframe."
+        )
+
+    # Filters out series not sent to chaining.
+    df_indicator_of_concern = df_indicator[df_indicator.columns[df_indicator.columns.isin(liste_km)]]
+    df_indicator_of_concern = df_indicator_of_concern[
+        (df_indicator_of_concern.index.year <= endyear)
+        & (df_indicator_of_concern.index.year >= startyear)
+    ]
+
+    df_target_of_concern = df_target[
+        df_target.columns[df_target.columns.isin(liste_km)]
+    ]  # Filters out series not sent to chaining.
+    df_target_of_concern = df_target_of_concern[
+        (df_target_of_concern.index.year <= endyear)
+        & (df_target_of_concern.index.year >= startyear)
+    ]
+
+    # Value checks for df_indicator.
+    indicatorzerowarnlist = []  # Zeroes checks.
+    for col in df_indicator_of_concern.columns:
+        if (df_indicator_of_concern[col] == 0).all():
+            indicatorzerowarnlist.append(f"{col}")
+    if len(indicatorzerowarnlist) > 0:
+        warnings.warn(
+            f"There are only zeroes in {indicatorzerowarnlist} in the indicator dataframe.",
+            UserWarning,
+            stacklevel=2,
+        )
+    indicatorintwarnlist = []  # Non-int check.
+    for col in df_indicator_of_concern.columns:
+        if (
+            not pd.api.types.is_any_real_numeric_dtype(df_indicator_of_concern[col])
+            and col
+            not in df_indicator_of_concern.columns[df_indicator_of_concern.isna().any()].to_list()
+        ):
+            indicatorintwarnlist.append(f"{col}")
+    if len(indicatorintwarnlist) > 0:
+        warnings.warn(
+            f"There are values in {indicatorintwarnlist} in the indicator dataframe that are not real numbers. Skipping sending these to benchmarking.",
+            UserWarning,
+            stacklevel=2,
+        )
+    if df_indicator_of_concern.isna().any().any() is np.True_:  # NaN check.
+        warnings.warn(
+            f"There are NaN-values in {df_indicator_of_concern.columns[df_indicator_of_concern.isna().any()].to_list()} in the indicator dataframe. Skipping sending these to benchmarking.",
+            UserWarning,
+            stacklevel=2,
+        )
+    # Value checks for df_target.
+    targetzerowarnlist = []  # Zeroes checks.
+    for col in df_target_of_concern.columns:
+        if (df_target_of_concern[col] == 0).all():
+            targetzerowarnlist.append(f"{col}")
+    if len(targetzerowarnlist) > 0:
+        warnings.warn(
+            f"There are only zeroes in {targetzerowarnlist} in the target dataframe.",
+            UserWarning,
+            stacklevel=2,
+        )
+    targetintwarnlist = []  # Non-int check.
+    for col in df_target_of_concern.columns:
+        if (
+            not pd.api.types.is_any_real_numeric_dtype(df_target_of_concern[col])
+            and col
+            not in df_target_of_concern.columns[df_target_of_concern.isna().any()].to_list()
+        ):
+            targetintwarnlist.append(f"{col}")
+    if len(targetintwarnlist) > 0:
+        warnings.warn(
+            f"There are values in {targetintwarnlist} in the target dataframe that are not real numbers. Skipping sending these to benchmarking.",
+            UserWarning,
+            stacklevel=2,
+        )
+    if df_target_of_concern.isna().any().any() is np.True_:  # NaN check. 
+        warnings.warn(
+            f"There are NaN-values in {df_target_of_concern.columns[df_target_of_concern.isna().any()].to_list()} in the target dataframe. Skipping sending these to benchmarking.",
+            UserWarning,
+            stacklevel=2,
+        )
+
+    # Filters out valintwarnlist
+    df_target_of_concern = df_target_of_concern[
+        [col for col in df_target_of_concern.columns if col not in targetintwarnlist]
+    ]
+    df_indicator_of_concern = df_indicator_of_concern[
+        [col for col in df_indicator_of_concern.columns if col not in targetintwarnlist]
+    ]
+    # Filters out mnrintwarnlist
+    df_target_of_concern = df_target_of_concern[
+        [col for col in df_target_of_concern.columns if col not in indicatorintwarnlist]
+    ]
+    df_indicator_of_concern = df_indicator_of_concern[
+        [col for col in df_indicator_of_concern.columns if col not in indicatorintwarnlist]
+    ]
+    liste_km = [
+        serie
+        for serie in liste_km
+        if serie not in (indicatorintwarnlist+targetintwarnlist+df_target_of_concern.columns[df_target_of_concern.isna().any()].to_list()+df_indicator_of_concern.columns[df_indicator_of_concern.isna().any()].to_list())
+    ]
+
+    # Logical checks.
+    # Checking that start and end years are in range.
+    if pd.Period(startyear, freq="Y") not in df_indicator_of_concern.index.asfreq("Y"):
+        raise AssertionError("Selected start year not in the indicator dataframe.")
+    if pd.Period(endyear, freq="Y") not in df_indicator_of_concern.index.asfreq("Y"):
+        raise AssertionError("Selected end year not in the indicator dataframe.")
+    if pd.Period(startyear, freq="Y") not in df_target_of_concern.index.asfreq("Y"):
+        raise AssertionError("Selected start year not in the target dataframe.")
+    if pd.Period(endyear, freq="Y") not in df_target_of_concern.index.asfreq("Y"):
+        raise AssertionError("Selected end year not in the target dataframe.")
+
+    # Aggregate df_indicator_of_concern to the frequency of df_target_of_concern
     df_indicator_agg = (
-        df_indicator_of_concern[overlapping_cols].resample(df_target_of_concern.index.freqstr).sum()
+        df_indicator_of_concern.resample(df_target_of_concern.index.freqstr).sum()
     )
 
     # Calculates amount of months in a quarter or year and so forth
-    num_periods = calculate_subperiods(
-        df_indicator_of_concern.index.freqstr, df_target_of_concern.index.freqstr
-    )
+    num_periods = len(pd.period_range(
+        start=pd.Period(pd.Period("1900", df_target_of_concern.index.freqstr).start_time, df_indicator_of_concern.index.freqstr), 
+        end=  pd.Period(pd.Period("1900", df_target_of_concern.index.freqstr).end_time,   df_indicator_of_concern.index.freqstr), 
+        freq= df_indicator_of_concern.index.freqstr)
+                     )
 
     # Calculate the difference between df_indicator_of_concern and the aggregated df_target_of_concern
-    diff = (df_target_of_concern[overlapping_cols] - df_indicator_agg) / num_periods
+    diff = (df_target_of_concern - df_indicator_agg) / num_periods
 
     # Disaggregate diff
-    diff = diff.resample(df_indicator_of_concern.index.freqstr).ffill()
+    diff = diff.resample(df_indicator.index.freqstr).ffill()
 
     # Add difference
-    df_indicator_of_concern[overlapping_cols] = df_indicator_of_concern[overlapping_cols] + diff
+    df_indicator_of_concern = df_indicator_of_concern + diff
 
     return df_indicator_of_concern
-# -
-
-

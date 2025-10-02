@@ -106,13 +106,13 @@ def chain_df(
             valintwarnlist.append(f"{col}")
     if len(valintwarnlist) > 0:
         warnings.warn(
-            f"There are values in {valintwarnlist} in the value dataframe that are not real numbers. Skipping sending these to benchmarking.",
+            f"There are values in {valintwarnlist} in the value dataframe that are not real numbers. Skipping sending these to chaining.",
             UserWarning,
             stacklevel=2,
         )
     if val_df_of_concern.isna().any().any() is np.True_:  # NaN check.
         warnings.warn(
-            f"There are NaN-values in {val_df_of_concern.columns[val_df_of_concern.isna().any()].to_list()} in the value dataframe.",
+            f"There are NaN-values in {val_df_of_concern.columns[val_df_of_concern.isna().any()].to_list()} in the value dataframe. Skipping sending these to chaining.",
             UserWarning,
             stacklevel=2,
         )
@@ -139,13 +139,13 @@ def chain_df(
             fpintwarnlist.append(f"{col}")
     if len(fpintwarnlist) > 0:
         warnings.warn(
-            f"There are values in {fpintwarnlist} in the fixed price dataframe that are not real numbers. Skipping sending these to benchmarking.",
+            f"There are values in {fpintwarnlist} in the fixed price dataframe that are not real numbers. Skipping sending these to chaining.",
             UserWarning,
             stacklevel=2,
         )
     if fp_df_of_concern.isna().any().any() is np.True_:  # NaN check.
         warnings.warn(
-            f"There are NaN-values in {fp_df_of_concern.columns[fp_df_of_concern.isna().any()].to_list()} in the fixed price dataframe.",
+            f"There are NaN-values in {fp_df_of_concern.columns[fp_df_of_concern.isna().any()].to_list()} in the fixed price dataframe. Skipping sending these to chaining.",
             UserWarning,
             stacklevel=2,
         )
@@ -157,7 +157,7 @@ def chain_df(
     fp_df_of_concern = fp_df_of_concern[
         [col for col in fp_df_of_concern.columns if col not in valintwarnlist]
     ]
-    # Filters out mnrintwarnlist
+    # Filters out fpintwarnlist
     val_df_of_concern = val_df_of_concern[
         [col for col in val_df_of_concern.columns if col not in fpintwarnlist]
     ]
@@ -167,17 +167,17 @@ def chain_df(
     serieslist = [
         serie
         for serie in serieslist
-        if serie not in valintwarnlist and serie not in fpintwarnlist
+        if serie not in (valintwarnlist+fpintwarnlist+fp_df_of_concern.columns[fp_df_of_concern.isna().any()].to_list()+val_df_of_concern.columns[val_df_of_concern.isna().any()].to_list())
     ]
 
     # Checking that start and end years are in range.
-    if pd.Period(startyear, freq="Y") not in val_df_of_concern.index:
+    if pd.Period(startyear, freq="Y") not in val_df_of_concern.index.asfreq("Y"):
         raise AssertionError("Selected start year not in the value dataframe.")
-    if pd.Period(endyear, freq="Y") not in val_df_of_concern.index:
+    if pd.Period(endyear, freq="Y") not in val_df_of_concern.index.asfreq("Y"):
         raise AssertionError("Selected end year not in the value dataframe.")
-    if pd.Period(startyear, freq="Y") not in fp_df_of_concern.index:
+    if pd.Period(startyear, freq="Y") not in fp_df_of_concern.index.asfreq("Y"):
         raise AssertionError("Selected start year not in the fixed price dataframe.")
-    if pd.Period(endyear, freq="Y") not in fp_df_of_concern.index:
+    if pd.Period(endyear, freq="Y") not in fp_df_of_concern.index.asfreq("Y"):
         raise AssertionError("Selected end year not in the value dataframe.")
 
     # Checking base year is in year range.

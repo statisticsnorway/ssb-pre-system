@@ -37,6 +37,8 @@ def minm4(
     It ensures consistency between the series in terms of data structure, formats,
     and numerical properties.
 
+    Author: Vemund Rundberget, Seksjon for makroøkonomi, Forksningsavdelingen, SSB
+    
     Args:
         mnr: DataFrame containing monthly or quarterly data to be benchmarked.
             The index must be a pandas PeriodIndex.
@@ -84,7 +86,11 @@ def minm4(
         raise TypeError(f"The {periodely} dataframe is not a DataFrame.")
     if not isinstance(mnr.index, pd.PeriodIndex):
         raise TypeError(f"The {periodely} dataframe does not have a pd.PeriodIndex.")
-
+    if not pd.Series(liste_m4).isin(mnr.columns).all():
+        raise TypeError(
+            f"{np.setdiff1d(liste_m4, mnr.columns).tolist()} are missing in the {periodely} dataframe."
+        )
+    
     mnr_of_concern = mnr[
         mnr.columns[mnr.columns.isin(liste_m4)]
     ]  # Filters out series not sent to benchmarking.
@@ -93,13 +99,9 @@ def minm4(
         & (mnr_of_concern.index.year >= startaar)
     ]
 
-    if not pd.Series(liste_m4).isin(mnr.columns).all():
-        raise TypeError(
-            f"{np.setdiff1d(liste_m4, mnr.columns).tolist()} are missing in the {periodely} dataframe."
-        )
     if mnr_of_concern.isna().any().any() is np.True_:
         warnings.warn(
-            f"There are NaN-values in {mnr_of_concern.columns[mnr_of_concern.isna().any()].to_list()} in the {periodely} dataframe.",
+            f"There are NaN-values in {mnr_of_concern.columns[mnr_of_concern.isna().any()].to_list()} in the {periodely} dataframe. Skipping sending these to benchmarking.",
             UserWarning,
             stacklevel=2,
         )
@@ -134,22 +136,23 @@ def minm4(
         raise TypeError("The yearly dataframe is not a DataFrame.")
     if not isinstance(rea.index, pd.PeriodIndex):
         raise TypeError("The yearly dataframe does not have a pd.PeriodIndex.")
+    if not pd.Series(liste_m4).isin(rea.columns).all():
+        raise TypeError(
+            f"{np.setdiff1d(liste_m4, rea.columns).tolist()} are missing in the yearly dataframe."
+        )
 
+    # Filters out series not sent to benchmarking.
     rea_of_concern = rea[
         rea.columns[rea.columns.isin(liste_m4)]
-    ]  # Filters out series not sent to benchmarking.
+    ]  
     rea_of_concern = rea_of_concern[
         (rea_of_concern.index.year <= basisaar)
         & (rea_of_concern.index.year >= startaar)
     ]
 
-    if not pd.Series(liste_m4).isin(rea.columns).all():
-        raise TypeError(
-            f"{np.setdiff1d(liste_m4, rea.columns).tolist()} are missing in the yearly dataframe."
-        )
     if rea_of_concern.isna().any().any() is np.True_:
         warnings.warn(
-            f"There are NaN-values in {rea_of_concern.columns[rea_of_concern.isna().any()].to_list()} in the yearly dataframe.",
+            f"There are NaN-values in {rea_of_concern.columns[rea_of_concern.isna().any()].to_list()} in the yearly dataframe. Skipping sending these to benchmarking.",
             UserWarning,
             stacklevel=2,
         )
@@ -195,7 +198,7 @@ def minm4(
     liste_m4 = [
         serie
         for serie in liste_m4
-        if serie not in reaintwarnlist and serie not in mnrintwarnlist
+        if serie not in (reaintwarnlist+mnrintwarnlist+mnr_of_concern.columns[mnr_of_concern.isna().any()].to_list()+rea_of_concern.columns[rea_of_concern.isna().any()].to_list())
     ]
 
     if (
