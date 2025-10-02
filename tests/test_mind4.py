@@ -5,25 +5,35 @@ import pytest
 from pre_system.mind4 import mind4
 
 
-def _monthly_df(start: str, periods: int, value: float = 1.0, col: str = "x") -> pd.DataFrame:
+def _monthly_df(
+    start: str, periods: int, value: float = 1.0, col: str = "x"
+) -> pd.DataFrame:
     idx = pd.period_range(start=start, periods=periods, freq="M")
     return pd.DataFrame({col: np.full(len(idx), value, dtype=float)}, index=idx)
 
 
-def _quarterly_df(start: str, periods: int, value: float = 1.0, col: str = "x") -> pd.DataFrame:
+def _quarterly_df(
+    start: str, periods: int, value: float = 1.0, col: str = "x"
+) -> pd.DataFrame:
     idx = pd.period_range(start=start, periods=periods, freq="Q")
     return pd.DataFrame({col: np.full(len(idx), value, dtype=float)}, index=idx)
 
 
-def _annual_df(start_year: int, years: int, total_per_year: float = 12.0, col: str = "x") -> pd.DataFrame:
+def _annual_df(
+    start_year: int, years: int, total_per_year: float = 12.0, col: str = "x"
+) -> pd.DataFrame:
     idx = pd.period_range(start=str(start_year), periods=years, freq="Y")
-    return pd.DataFrame({col: np.full(len(idx), total_per_year, dtype=float)}, index=idx)
+    return pd.DataFrame(
+        {col: np.full(len(idx), total_per_year, dtype=float)}, index=idx
+    )
 
 
 def test_invalid_freq_raises() -> None:
     mnr = _monthly_df("2019-01", 12, 1.0, "x")
     rea = _annual_df(2019, 1, 12.0, "x")
-    with pytest.raises(TypeError, match='The frequency setting must me either "M" or "Q"'):
+    with pytest.raises(
+        TypeError, match='The frequency setting must me either "M" or "Q"'
+    ):
         mind4(mnr, rea, ["x"], basisaar=2019, startaar=2019, freq="W")  # type: ignore[arg-type]
 
 
@@ -44,14 +54,18 @@ def test_mnr_index_must_be_periodindex() -> None:
     idx = pd.date_range(start="2019-01-01", periods=12, freq="MS")
     mnr = pd.DataFrame({"x": np.ones(len(idx))}, index=idx)
     rea = _annual_df(2019, 1, 12.0, "x")
-    with pytest.raises(TypeError, match="monthly dataframe does not have a pd.PeriodIndex"):
+    with pytest.raises(
+        TypeError, match=r"monthly dataframe does not have a pd\.PeriodIndex"
+    ):
         mind4(mnr, rea, ["x"], basisaar=2019, startaar=2019, freq="M")
 
 
 def test_missing_columns_in_monthly_dataframe_raises() -> None:
     mnr = _monthly_df("2019-01", 12, 1.0, "y")  # column 'x' is missing
     rea = _annual_df(2019, 1, 12.0, "x")
-    with pytest.raises(TypeError, match=r"\['x'\] are missing in the monthly dataframe."):
+    with pytest.raises(
+        TypeError, match=r"\['x'\] are missing in the monthly dataframe."
+    ):
         mind4(mnr, rea, ["x"], basisaar=2019, startaar=2019, freq="M")
 
 
@@ -59,7 +73,9 @@ def test_year_overlap_required_raises() -> None:
     # mnr covers 2019, rea covers 2020 only; expect a mismatch error
     mnr = _monthly_df("2019-01", 12, 1.0, "x")
     rea = _annual_df(2020, 1, 12.0, "x")
-    with pytest.raises(TypeError, match=r"There aren't values in both series for \{2019\}"):
+    with pytest.raises(
+        TypeError, match=r"There aren't values in both series for \{2019\}"
+    ):
         mind4(mnr, rea, ["x"], basisaar=2020, startaar=2019, freq="M")
 
 

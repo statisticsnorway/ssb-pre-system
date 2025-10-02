@@ -55,8 +55,6 @@ def minm4(
     Raises:
         TypeError: If the input parameters or dataframes do not meet the expected types,
             structures, or contents.
-        UserWarning: If any issues such as NaN values, all-zero columns, or non-numeric
-            data are found in the input dataframes.
     """
     res_dict = {}
 
@@ -88,9 +86,8 @@ def minm4(
     mnr_of_concern = mnr[
         mnr.columns[mnr.columns.isin(liste_m4)]
     ]  # Filters out series not sent to benchmarking.
-    mask_mnr = (
-        (mnr_of_concern.index.year <= basisaar)  # type: ignore[attr-defined]
-        & (mnr_of_concern.index.year >= startaar)  # type: ignore[attr-defined]
+    mask_mnr = (mnr_of_concern.index.year <= basisaar) & (  # type: ignore[attr-defined]
+        mnr_of_concern.index.year >= startaar  # type: ignore[attr-defined]
     )
     mnr_of_concern = mnr_of_concern.loc[mask_mnr, :]
 
@@ -139,9 +136,8 @@ def minm4(
     rea_of_concern = rea[
         rea.columns[rea.columns.isin(liste_m4)]
     ]  # Filters out series not sent to benchmarking.
-    mask_rea = (
-        (rea_of_concern.index.year <= basisaar)  # type: ignore[attr-defined]
-        & (rea_of_concern.index.year >= startaar)  # type: ignore[attr-defined]
+    mask_rea = (rea_of_concern.index.year <= basisaar) & (  # type: ignore[attr-defined]
+        rea_of_concern.index.year >= startaar  # type: ignore[attr-defined]
     )
     rea_of_concern = rea_of_concern.loc[mask_rea, :]
 
@@ -204,9 +200,7 @@ def minm4(
     r_years = set(rea_of_concern.index.year)
     missing_years = m_years.difference(r_years)
     if missing_years != set():
-        raise TypeError(
-            f"There aren't values in both series for {missing_years}."
-        )
+        raise TypeError(f"There aren't values in both series for {missing_years}.")
 
     if not isinstance(startaar, int):
         raise TypeError("The start year must be an integer.")

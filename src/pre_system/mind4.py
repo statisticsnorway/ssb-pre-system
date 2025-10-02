@@ -47,7 +47,14 @@ def mind4(
             Default is "M".
 
     Returns:
-        pd.DataFrame: DataFrame containing the benchmarking results, after MinD4 adjustments.
+        pd.DataFrame: Dataframe containing the benchmarking results, after MinD4 adjustments.
+
+    Raises:
+        TypeError: If freq is not "M" or "Q"; if liste_d4 is not a list or string;
+            if mnr/rea are not DataFrames with a PeriodIndex; if required series are
+            missing in mnr/rea; if startaar/basisaar are not integers, if basisaar >= 2050,
+            if basisaar < startaar, or if there are years present in the monthly/quarterly
+            data that are missing in the yearly data.
     """
     res_dict = {}
 
@@ -79,9 +86,8 @@ def mind4(
     mnr_of_concern = mnr[
         mnr.columns[mnr.columns.isin(liste_d4)]
     ]  # Filters out series not sent to benchmarking.
-    mask_mnr = (
-        (mnr_of_concern.index.year <= basisaar)  # type: ignore[attr-defined]
-        & (mnr_of_concern.index.year >= startaar)  # type: ignore[attr-defined]
+    mask_mnr = (mnr_of_concern.index.year <= basisaar) & (  # type: ignore[attr-defined]
+        mnr_of_concern.index.year >= startaar  # type: ignore[attr-defined]
     )
     mnr_of_concern = mnr_of_concern.loc[mask_mnr, :]
 
@@ -130,9 +136,8 @@ def mind4(
     rea_of_concern = rea[
         rea.columns[rea.columns.isin(liste_d4)]
     ]  # Filters out series not sent to benchmarking.
-    mask_rea = (
-        (rea_of_concern.index.year <= basisaar)  # type: ignore[attr-defined]
-        & (rea_of_concern.index.year >= startaar)  # type: ignore[attr-defined]
+    mask_rea = (rea_of_concern.index.year <= basisaar) & (  # type: ignore[attr-defined]
+        rea_of_concern.index.year >= startaar  # type: ignore[attr-defined]
     )
     rea_of_concern = rea_of_concern.loc[mask_rea, :]
 
@@ -195,9 +200,7 @@ def mind4(
     r_years = set(rea_of_concern.index.year)
     missing_years = m_years.difference(r_years)
     if missing_years != set():
-        raise TypeError(
-            f"There aren't values in both series for {missing_years}."
-        )
+        raise TypeError(f"There aren't values in both series for {missing_years}.")
 
     if not isinstance(startaar, int):
         raise TypeError("The start year must be an integer.")

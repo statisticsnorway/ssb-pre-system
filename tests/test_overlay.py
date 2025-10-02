@@ -16,8 +16,8 @@ def test_overlay(quarterly_df: pd.DataFrame) -> None:
 
     # If we overlay the three DataFrames, the result should contains no NaN's
     result_df = overlay(df0, df1, df2)
-    assert not result_df.isna().any().any()  # type: ignore [union-attr]
+    assert not result_df.isna().any().any()
 
     # If we leave out df2 there are still some, since the NaN's in df0 and df1 overlap
     result_df2 = overlay(df0, df1)
-    assert result_df2.isna().any().any()  # type: ignore [union-attr]
+    assert result_df2.isna().any().any()
