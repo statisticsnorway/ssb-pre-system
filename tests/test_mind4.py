@@ -24,10 +24,10 @@ def test_invalid_freq_raises() -> None:
     mnr = _monthly_df("2019-01", 12, 1.0, "x")
     rea = _annual_df(2019, 1, 12.0, "x")
     with pytest.raises(TypeError, match='The frequency setting must me either "M" or "Q"'):
-        mind4(mnr, rea, ["x"], basisaar=2019, startaar=2019, freq="W")
+        mind4(mnr, rea, ["x"], basisaar=2019, startaar=2019, freq="W")  # type: ignore[arg-type]
 
 
-def test_liste_d4_as_string_raises_due_to_validation_order() -> None:
+def test_list_d4_as_string_raises_due_to_validation_order() -> None:
     # Note: Current implementation raises when a string is provided (despite docstring allowing it)
     mnr = _monthly_df("2019-01", 12, 1.0, "x")
     rea = _annual_df(2019, 1, 12.0, "x")
@@ -47,7 +47,7 @@ def test_mnr_index_must_be_periodindex() -> None:
 def test_missing_columns_in_monthly_dataframe_raises() -> None:
     mnr = _monthly_df("2019-01", 12, 1.0, "y")  # column 'x' is missing
     rea = _annual_df(2019, 1, 12.0, "x")
-    with pytest.raises(TypeError, match="\['x'\] are missing in the monthly dataframe."):
+    with pytest.raises(TypeError, match=r"\['x'\] are missing in the monthly dataframe."):
         mind4(mnr, rea, ["x"], basisaar=2019, startaar=2019, freq="M")
 
 

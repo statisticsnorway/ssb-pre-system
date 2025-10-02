@@ -217,4 +217,4 @@ def chain_df(
     if appendvlname:
         vl_df.columns = vl_df.columns.astype(str) + ".vl"
 
-    return pd.DataFrame(vl_df, index=cum_product_df.index, columns=cum_product_df.columns)
+    return vl_df
