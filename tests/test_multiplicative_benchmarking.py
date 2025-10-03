@@ -17,7 +17,7 @@
 import pandas as pd
 import pytest
 
-from pre_system.src.pre_system.multiplicative_benchmark import multiplicative_benchmark
+from pre_system.multiplicative_benchmark import multiplicative_benchmark
 
 
 def test_multiplicative_benchmark_happy_path():

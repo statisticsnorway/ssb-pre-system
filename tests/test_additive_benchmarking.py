@@ -17,7 +17,7 @@
 import pandas as pd
 import pytest
 
-from pre_system.src.pre_system.additive_benchmark import additive_benchmark
+from pre_system.additive_benchmark import additive_benchmark
 
 
 def test_basic_functionality():
