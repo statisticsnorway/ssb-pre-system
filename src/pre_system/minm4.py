@@ -57,11 +57,8 @@ def minm4(
     Raises:
         TypeError: If the input parameters or dataframes do not meet the expected types,
             structures, or contents.
-        UserWarning: If any issues such as NaN values, all-zero columns, or non-numeric
-            data are found in the input dataframes.
     """
     res_dict = {}
-
 
     if not (freq == "M" or freq == "Q"):
         raise TypeError('The frequency setting must me either "M" or "Q".')

@@ -16,6 +16,7 @@
 # %%
 import pandas as pd
 import pytest
+import re
 
 from pre_system.multiplicative_benchmark import multiplicative_benchmark
 
@@ -39,13 +40,13 @@ def test_multiplicative_benchmark_happy_path():
 
 def test_multiplicative_benchmark_invalid_index_type():
     # Indicator with DatetimeIndex instead of PeriodIndex
-    idx_monthly = pd.date_range("2020-01-01", periods=12, freq="M")
+    idx_monthly = pd.date_range("2020-01-01", periods=12, freq="ME")
     df_indicator = pd.DataFrame({"A": range(12)}, index=idx_monthly)
 
     idx_yearly = pd.period_range("2020", "2020", freq="Y")
     df_target = pd.DataFrame({"A": [66]}, index=idx_yearly)
 
-    with pytest.raises(TypeError, match="Index must be a pd.PeriodIndex"):
+    with pytest.raises(TypeError, match=re.escape("Index must be a pd.PeriodIndex")):
         multiplicative_benchmark(df_indicator, df_target, ["A"], 2020, 2020)
 
 

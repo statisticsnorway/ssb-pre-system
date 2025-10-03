@@ -36,7 +36,7 @@ def mind4(
     and addresses edge cases such as missing values or invalid contents. The function
     allows scaling adjustments for leading and trailing periods using specified start and
     basis years, which determine the timeframe of analysis.
-    
+
     Author: Vemund Rundberget, Seksjon for makroøkonomi, Forksningsavdelingen, SSB
 
     Args:
