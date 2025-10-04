@@ -14,14 +14,16 @@
 # ---
 
 # %%
+import re
+
 import pandas as pd
 import pytest
-import re
+from typing import cast
 
 from pre_system.multiplicative_benchmark import multiplicative_benchmark
 
 
-def test_multiplicative_benchmark_happy_path():
+def test_multiplicative_benchmark_happy_path() -> None:
     # Monthly indicator (high frequency)
     idx_monthly = pd.period_range("2020-01", "2020-12", freq="M")
     df_indicator = pd.DataFrame({"A": [1.0] * 12}, index=idx_monthly)
@@ -33,12 +35,12 @@ def test_multiplicative_benchmark_happy_path():
     result = multiplicative_benchmark(df_indicator, df_target, ["A"], 2020, 2020)
 
     # Should still be monthly
-    assert result.index.freqstr == "M"
+    assert cast(pd.PeriodIndex, result.index).freqstr == "M"
     # Aggregated value must equal target
     assert result["A"].sum() == pytest.approx(24.0)
 
 
-def test_multiplicative_benchmark_invalid_index_type():
+def test_multiplicative_benchmark_invalid_index_type() -> None:
     # Indicator with DatetimeIndex instead of PeriodIndex
     idx_monthly = pd.date_range("2020-01-01", periods=12, freq="ME")
     df_indicator = pd.DataFrame({"A": range(12)}, index=idx_monthly)
@@ -50,7 +52,7 @@ def test_multiplicative_benchmark_invalid_index_type():
         multiplicative_benchmark(df_indicator, df_target, ["A"], 2020, 2020)
 
 
-def test_multiplicative_benchmark_startyear_not_in_data():
+def test_multiplicative_benchmark_startyear_not_in_data() -> None:
     idx_monthly = pd.period_range("2020-01", "2020-12", freq="M")
     df_indicator = pd.DataFrame({"A": [1.0] * 12}, index=idx_monthly)
 

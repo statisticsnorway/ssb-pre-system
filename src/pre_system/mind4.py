@@ -71,7 +71,7 @@ def mind4(
 
     # CHECKS.
     # Checking object type.
-    if not (isinstance(liste_d4, list) or isinstance(liste_d4, str)):
+    if not isinstance(liste_d4, (list, str)):
         raise TypeError(
             "You need to create a list of all the series you wish to benchmark, and it must be in the form of a list or string."
         )
@@ -91,10 +91,10 @@ def mind4(
 
     # Filters out series not sent to benchmarking.
     mnr_of_concern = mnr[mnr.columns[mnr.columns.isin(liste_d4)]]
-    mnr_of_concern = mnr_of_concern[
-        (mnr_of_concern.index.year <= basisaar)
-        & (mnr_of_concern.index.year >= startaar)
-    ]
+    mask_mnr = (mnr_of_concern.index.year <= basisaar) & (  # type: ignore[attr-defined]
+        mnr_of_concern.index.year >= startaar  # type: ignore[attr-defined]
+    )
+    mnr_of_concern = mnr_of_concern.loc[mask_mnr, :]
 
     if mnr_of_concern.isna().any().any() is np.True_:
         warnings.warn(
@@ -140,10 +140,10 @@ def mind4(
 
     # Filters out series not sent to benchmarking.
     rea_of_concern = rea[rea.columns[rea.columns.isin(liste_d4)]]
-    rea_of_concern = rea_of_concern[
-        (rea_of_concern.index.year <= basisaar)
-        & (rea_of_concern.index.year >= startaar)
-    ]
+    mask_rea = (rea_of_concern.index.year <= basisaar) & (  # type: ignore[attr-defined]
+        rea_of_concern.index.year >= startaar  # type: ignore[attr-defined]
+    )
+    rea_of_concern = rea_of_concern.loc[mask_rea, :]
 
     if rea_of_concern.isna().any().any() is np.True_:
         warnings.warn(
@@ -223,9 +223,6 @@ def mind4(
     if basisaar < startaar:
         raise TypeError("The start year cannot be greater than the final year.")
 
-    print("The inputdata passed the checks.\n")
-    # CHECKS DONE.
-
     # Preperation of input data.
 
     # Scaling of the leading and following values.
@@ -241,7 +238,7 @@ def mind4(
             flush=True,
         )
 
-        # Laster maneds- og aarstall
+        # Loads monthly and yearly values
         datam_ = mnr_of_concern[elem].values
         datay_ = rea_of_concern[elem].values
 
@@ -275,8 +272,8 @@ def mind4(
         # Scaling of the following value.
         dataye = avstemming2 * datame
 
-        datam = np.hstack((datamf, datam_, datame))
-        datay = np.hstack((datayf, datay_, dataye))
+        datam = np.hstack((np.asarray(datamf), np.asarray(datam_), np.asarray(datame)))
+        datay = np.hstack((np.asarray(datayf), np.asarray(datay_), np.asarray(dataye)))
 
         # Counting months/quarters and years.
         nm = datam.shape[0]

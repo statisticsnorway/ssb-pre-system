@@ -14,13 +14,16 @@
 # ---
 
 # %%
+import re
+
 import pandas as pd
 import pytest
-import re
+from typing import cast
 
 from pre_system.additive_benchmark import additive_benchmark
 
-def test_basic_functionality():
+
+def test_basic_functionality() -> None:
     # Quarterly target (low frequency)
     df_target = pd.DataFrame(
         {"value": [21, 15]},
@@ -36,13 +39,14 @@ def test_basic_functionality():
     result = additive_benchmark(df_indicator, df_target, ["value"], 2022, 2022)
 
     # Check that index is still monthly
-    assert result.index.freqstr == "M"
+    assert cast(pd.PeriodIndex, result.index).freqstr == "M"
     # Check number of rows
     assert len(result) == 6
     # Check adjustment preserved total sums
     assert round(result["value"].sum(), 6) == df_target["value"].sum()
 
-def test_invalid_index_type():
+
+def test_invalid_index_type() -> None:
     # Using DatetimeIndex instead of PeriodIndex
     df_target = pd.DataFrame(
         {"value": [1, 2, 3]},
@@ -57,7 +61,7 @@ def test_invalid_index_type():
         additive_benchmark(df_indicator, df_target, ["value"], 2022, 2022)
 
 
-def test_missing_column_in_target():
+def test_missing_column_in_target() -> None:
     df_target = pd.DataFrame(
         {"x": [1, 2, 3]},
         index=pd.period_range("2022-01", periods=3, freq="M"),

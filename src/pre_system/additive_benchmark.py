@@ -1,5 +1,6 @@
 # +
 import warnings
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -71,13 +72,9 @@ def additive_benchmark(
     # Checking object types.
     if not isinstance(df_indicator, pd.DataFrame):
         raise TypeError("The indicator dataframe is not a pd.DataFrame.")
-    else:
-        pass
     if not isinstance(df_target, pd.DataFrame):
         raise TypeError("The target dataframe is not a pd.DataFrame.")
-    else:
-        pass
-    if not isinstance(liste_km, list) or isinstance(liste_km, str):
+    if not isinstance(liste_km, (list, str)):
         raise TypeError(
             "You need to create a list of all the series you wish to benchmark, and it must be in the form of a list or string."
         )
@@ -112,18 +109,19 @@ def additive_benchmark(
     df_indicator_of_concern = df_indicator[
         df_indicator.columns[df_indicator.columns.isin(liste_km)]
     ]
-    df_indicator_of_concern = df_indicator_of_concern[
-        (df_indicator_of_concern.index.year <= endyear)
-        & (df_indicator_of_concern.index.year >= startyear)
-    ]
+    mask_indicator = (df_indicator_of_concern.index.year <= endyear) & (  # type: ignore[attr-defined]
+        df_indicator_of_concern.index.year >= startyear  # type: ignore[attr-defined]
+    )
+    df_indicator_of_concern = df_indicator_of_concern.loc[mask_indicator, :]
 
     df_target_of_concern = df_target[
         df_target.columns[df_target.columns.isin(liste_km)]
-    ]  # Filters out series not sent to chaining.
-    df_target_of_concern = df_target_of_concern[
-        (df_target_of_concern.index.year <= endyear)
-        & (df_target_of_concern.index.year >= startyear)
     ]
+    # Filters out series not sent to chaining.
+    mask_target = (df_target_of_concern.index.year <= endyear) & (  # type: ignore[attr-defined]
+        df_target_of_concern.index.year >= startyear  # type: ignore[attr-defined]
+    )
+    df_target_of_concern = df_target_of_concern.loc[mask_target, :]
 
     # Value checks for df_indicator.
     indicatorzerowarnlist = []  # Zeroes checks.
@@ -226,13 +224,13 @@ def additive_benchmark(
 
     # Logical checks.
     # Checking that start and end years are in range.
-    if pd.Period(startyear, freq="Y") not in df_indicator_of_concern.index.asfreq("Y"):
+    if pd.Period(str(startyear), freq="Y") not in df_indicator_of_concern.index.asfreq("Y"):
         raise AssertionError("Selected start year not in the indicator dataframe.")
-    if pd.Period(endyear, freq="Y") not in df_indicator_of_concern.index.asfreq("Y"):
+    if pd.Period(str(endyear), freq="Y") not in df_indicator_of_concern.index.asfreq("Y"):
         raise AssertionError("Selected end year not in the indicator dataframe.")
-    if pd.Period(startyear, freq="Y") not in df_target_of_concern.index.asfreq("Y"):
+    if pd.Period(str(startyear), freq="Y") not in df_target_of_concern.index.asfreq("Y"):
         raise AssertionError("Selected start year not in the target dataframe.")
-    if pd.Period(endyear, freq="Y") not in df_target_of_concern.index.asfreq("Y"):
+    if pd.Period(str(endyear), freq="Y") not in df_target_of_concern.index.asfreq("Y"):
         raise AssertionError("Selected end year not in the target dataframe.")
 
     # Aggregate df_indicator_of_concern to the frequency of df_target_of_concern
@@ -264,4 +262,4 @@ def additive_benchmark(
     # Add difference
     df_indicator_of_concern = df_indicator_of_concern + diff
 
-    return df_indicator_of_concern
+    return cast(pd.DataFrame, df_indicator_of_concern)

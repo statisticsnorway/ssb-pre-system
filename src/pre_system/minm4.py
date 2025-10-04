@@ -71,7 +71,7 @@ def minm4(
 
     # CHECKS.
     # Checking object type.
-    if not (isinstance(liste_m4, list) or isinstance(liste_m4, str)):
+    if not isinstance(liste_m4, (list, str)):
         raise TypeError(
             "You need to create a list of all the series you wish to benchmark, and it must be in the form of a list or string."
         )
@@ -88,13 +88,12 @@ def minm4(
             f"{np.setdiff1d(liste_m4, mnr.columns).tolist()} are missing in the {periodely} dataframe."
         )
 
-    mnr_of_concern = mnr[
-        mnr.columns[mnr.columns.isin(liste_m4)]
-    ]  # Filters out series not sent to benchmarking.
-    mnr_of_concern = mnr_of_concern[
-        (mnr_of_concern.index.year <= basisaar)
-        & (mnr_of_concern.index.year >= startaar)
-    ]
+    # Filters out series not sent to benchmarking.
+    mnr_of_concern = mnr[mnr.columns[mnr.columns.isin(liste_m4)]]
+    mask_mnr = (mnr_of_concern.index.year <= basisaar) & (  # type: ignore[attr-defined]
+        mnr_of_concern.index.year >= startaar  # type: ignore[attr-defined]
+    )
+    mnr_of_concern = mnr_of_concern.loc[mask_mnr, :]
 
     if mnr_of_concern.isna().any().any() is np.True_:
         warnings.warn(
@@ -140,10 +139,10 @@ def minm4(
 
     # Filters out series not sent to benchmarking.
     rea_of_concern = rea[rea.columns[rea.columns.isin(liste_m4)]]
-    rea_of_concern = rea_of_concern[
-        (rea_of_concern.index.year <= basisaar)
-        & (rea_of_concern.index.year >= startaar)
-    ]
+    mask_rea = (rea_of_concern.index.year <= basisaar) & (  # type: ignore[attr-defined]
+        rea_of_concern.index.year >= startaar  # type: ignore[attr-defined]
+    )
+    rea_of_concern = rea_of_concern.loc[mask_rea, :]
 
     if rea_of_concern.isna().any().any() is np.True_:
         warnings.warn(
@@ -223,9 +222,6 @@ def minm4(
     if basisaar < startaar:
         raise TypeError("The start year cannot be greater than the final year.")
 
-    print("The inputdata passed the checks.\n")
-    # CHECKS DONE.
-
     printlist = []
 
     for elem in liste_m4:
@@ -239,8 +235,8 @@ def minm4(
         # Defines the monthly and yearly values.
         datam_ = mnr_of_concern[elem].values
         datay_ = rea_of_concern[elem].values
-        datam = np.hstack([datam_])
-        datay = np.hstack([datay_])
+        datam = np.hstack([np.asarray(datam_)])
+        datay = np.hstack([np.asarray(datay_)])
 
         # Counting months and years.
         nm = datam.shape[0]
@@ -277,7 +273,9 @@ def minm4(
         try:
             Y = np.linalg.solve(A, X)
         except np.linalg.LinAlgError:
-            warnings.warn(f"Wasn't able to benchmark{elem}.", UserWarning, stacklevel=2)
+            warnings.warn(
+                f"Wasn't able to benchmark {elem}.", UserWarning, stacklevel=2
+            )
 
         res_dict[elem] = Y[0:nm].flatten()
 
