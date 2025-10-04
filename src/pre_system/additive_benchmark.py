@@ -15,59 +15,55 @@ def additive_benchmark(
     startyear: int,
     endyear: int,
 ) -> pd.DataFrame:
-    """TLDR: Adjust values in df_target to match df_indicator with additive quota adjustment.
+    """Adjust values in df_target to match df_indicator with additive quota adjustment.
 
-    Adjust values in df_target to match df_indicator using additive quota adjustment.
+    This function adjusts the values in df_target to match the values in df_indicator
+    by first aggregating df_target to the same frequency as df_indicator.
+    Then calculating the difference between the two, spreading the difference evenly
+    across the corresponding periods in df_target, and adding the difference to df_target.
+    The adjusted df_indicator is then returned, with non-overlapping columns left untreated.
 
-    This function adjusts the values in df_target to match the values in df_indicator by first aggregating df_target to the same
-    frequency as df_indicator, then calculating the difference between the two, spreading the difference evenly across the
-    corresponding periods in df_target, and adding the difference to df_target. The adjusted df_indicator is then returned,
-    with non-overlapping columns left untreated.
+    Author: Benedikt Goodman, National accounts Department and
+    Vemund Rundberget, Macroeconomics Department, Research Division, SSB
 
-    Author: Benedikt Goodman, Seksjon for Nasjonalregnskap and Vemund Rundberget, Seksjon for makroøkonomi, Forksningsavdelingen, SSB
-
-    Parameters
-    ----------
-    df_indicator : pd.DataFrame
-        The DataFrame containing the indicator values that will be benchmarked. Must have a period index.
-    df_target : pd.DataFrame
-        The DataFrame containing the values to benchmark additively against. Must have a period index.
-    strict_mode : bool, optional
-        If True, raise an error if the time intervals are not of equal length.
-        If False, issue a warning instead of raising an error. Default is True.
+    Args:
+        df_indicator: DataFrame containing the indicator values that will be benchmarked.
+            Must have a PeriodIndex.
+        df_target: DataFrame containing the values to benchmark additively against.
+            Must have a PeriodIndex.
+        liste_km: List of series names (columns) to benchmark. If a single string is
+            provided, it is automatically wrapped into a list.
+        startyear: The starting year (inclusive) of the benchmarking period.
+        endyear: The ending year (inclusive) of the benchmarking period.
+            Must be <= 2099.
 
     Returns:
-    -------
-    pd.DataFrame
-        The adjusted df_indicator with the same frequency as the original df_target, with non-overlapping columns left untreated.
+        pd.DataFrame: An adjusted DataFrame with the same frequency as the original df_target,
+            with non-overlapping columns left untreated.
 
     Raises:
-    ------
-    ValueError
-        If either of the input DataFrames does not have a datetime or period index, or if df_target has a finer frequency
-        than df_indicator (i.e. df_indicator has quarterly data and df_target has monthly data)
-    KeyError
-        If no overlapping column names between df_indicator and df_target exist.
-    IndexError
-        If strict_mode is True and the time intervals are not of equal length.
-    UserWarning
-        If strict_mode is False and the time intervals are not of equal length.
+        TypeError: If inputs are not DataFrames, indices are not PeriodIndex,
+            parameters are of incorrect type, or required columns are missing.
+        AssertionError: If the chosen start or end years are not available in either
+            the indicator or target DataFrames.
+
+    Notes:
+        - Any series containing only zeros, non-numeric values, or NaNs will be
+          excluded from benchmarking.
+        - The method ensures consistency: the sum of the adjusted indicator series
+          over each target period will exactly match the corresponding target value.
+        - This corresponds to an additive Denton-style temporal disaggregation.
 
     Examples:
-    --------
-    >>> import pandas as pd
-    >>> df_target = pd.DataFrame({'value': [1, 2, 3, 4, 5, 6]}, index=pd.date_range(start='2022-01-01', periods=6, freq='M'))
-    >>> df_indicator = pd.DataFrame({'value': [7, 12], 'other_col': [10, 20]}, index=pd.date_range(start='2022-01-01', periods=2, freq='Q'))
-    >>> adjusted_df = additive_benchmark(df_target, df_indicator)
-    >>> print(adjusted_df)
-                value  other_col
-        2022-01-31   3.5        10
-        2022-02-28   4.5        10
-        2022-03-31   5.5        10
-        2022-04-30   6.5        20
-        2022-05-31   7.5        20
-        2022-06-30   8.5        20
-
+        >>> import pandas as pd
+        >>> from pre_system.additive_benchmark import additive_benchmark
+        >>> idx_monthly = pd.period_range("2022-01", periods=6, freq="M")
+        >>> idx_quarterly = pd.period_range("2022Q1", periods=2, freq="Q")
+        >>> df_indicator = pd.DataFrame({"value": [1, 2, 3, 4, 5, 6]}, index=idx_monthly)
+        >>> df_target = pd.DataFrame({"value": [21, 15]}, index=idx_quarterly)
+        >>> additive_benchmark(df_indicator, df_target, ["value"], 2022, 2022).sum()
+        value    36.0
+        dtype: float64
     """
     # Checking object types.
     if not isinstance(df_indicator, pd.DataFrame):
@@ -224,11 +220,17 @@ def additive_benchmark(
 
     # Logical checks.
     # Checking that start and end years are in range.
-    if pd.Period(str(startyear), freq="Y") not in df_indicator_of_concern.index.asfreq("Y"):
+    if pd.Period(str(startyear), freq="Y") not in df_indicator_of_concern.index.asfreq(
+        "Y"
+    ):
         raise AssertionError("Selected start year not in the indicator dataframe.")
-    if pd.Period(str(endyear), freq="Y") not in df_indicator_of_concern.index.asfreq("Y"):
+    if pd.Period(str(endyear), freq="Y") not in df_indicator_of_concern.index.asfreq(
+        "Y"
+    ):
         raise AssertionError("Selected end year not in the indicator dataframe.")
-    if pd.Period(str(startyear), freq="Y") not in df_target_of_concern.index.asfreq("Y"):
+    if pd.Period(str(startyear), freq="Y") not in df_target_of_concern.index.asfreq(
+        "Y"
+    ):
         raise AssertionError("Selected start year not in the target dataframe.")
     if pd.Period(str(endyear), freq="Y") not in df_target_of_concern.index.asfreq("Y"):
         raise AssertionError("Selected end year not in the target dataframe.")

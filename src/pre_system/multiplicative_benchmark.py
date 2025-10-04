@@ -73,11 +73,18 @@ def multiplicative_benchmark(
     Examples:
     --------
     >>> import pandas as pd
+    >>> from pre_system.multiplicative_benchmark import multiplicative_benchmark
     >>> idx_monthly = pd.period_range("2018-01", "2019-12", freq="M")
     >>> idx_yearly = pd.period_range("2018", "2019", freq="Y")
     >>> df_indicator = pd.DataFrame({"A": range(len(idx_monthly))}, index=idx_monthly)
     >>> df_target = pd.DataFrame({"A": [66, 210]}, index=idx_yearly)
     >>> multiplicative_benchmark(df_indicator, df_target, "A", 2018, 2019).head()
+               A
+    2018-01  0.0
+    2018-02  1.0
+    2018-03  2.0
+    2018-04  3.0
+    2018-05  4.0
     """
     # Checking object types.
     if not isinstance(df_indicator, pd.DataFrame):
