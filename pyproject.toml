@@ -101,16 +101,15 @@ select = [
     "RUF",  # the ruff developer's own rules
 ]
 ignore = [
-    "ANN202", # Don't requiere return type annotation for private functions.
+    "ANN202", # Don't require return type annotation for private functions.
     "ANN401", # Allow type annotation with type Any.
     "D100",   # Supress undocumented-public-module. Only doc of public api required.
+    "D105",   # Supress undocumented magic methods. Only doc of public api required.
+    "FBT001", # Allow boolean positional arguments in a function.
+    "FBT002", # Allow boolean default positional arguments in a function.
     "E402",   # Supress module-import-not-at-top-of-file, needed in jupyter notebooks.
     "E501",   # Supress line-too-long warnings: trust black's judgement on this one.
-    "D101",   # TODO Temporary removed this check, reenable later
-    "D102",   # TODO Temporary removed this check, reenable later
-    "D103",   # TODO Temporary removed this check, reenable later
-    "D105",   # TODO Temporary removed this check, reenable later
-    "D107",   # TODO Temporary removed this check, reenable later
+    "PLR2004", # Allow to compare with unnamed numerical constants.
 ]
 
 [tool.ruff.lint.isort]
@@ -121,6 +120,9 @@ max-complexity = 15
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"  # You can also use "numpy".
+
+[tool.ruff.lint.pylint]
+max-args = 8
 
 [tool.ruff.lint.pep8-naming]
 classmethod-decorators = ["classmethod", "validator", "root_validator", "pydantic.validator"]

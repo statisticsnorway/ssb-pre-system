@@ -13,7 +13,27 @@ from .formula import Formula
 
 
 class PreSystem:
+    """Container for formulas and their input data.
+
+    Manages registration of Formula objects and the DataFrames required to
+    evaluate them (annuals, indicators, and optional weights and corrections).
+
+    Attributes:
+        name (str): Name of this pre-system.
+        baseyear (int | None): Common base year applied to all formulas.
+        formulae (dict[str, Formula]): Registered formulas by name.
+        annuals_df (pd.DataFrame | None): Annual level series (PeriodIndex with annual frequency).
+        indicators_df (pd.DataFrame | None): Indicator series (PeriodIndex).
+        weights_df (pd.DataFrame | None): Optional weights (annual series).
+        corrections_df (pd.DataFrame | None): Optional corrections aligned to indicator frequency.
+    """
+
     def __init__(self, name: str) -> None:
+        """Initialize a PreSystem.
+
+        Args:
+            name (str): Identifier for this pre-system.
+        """
         self._name = name
         self._baseyear: int | None = None
         self._formulae: dict[str, Formula] = {}
@@ -28,14 +48,35 @@ class PreSystem:
 
     @property
     def name(self) -> str:
+        """Provides access to the private _name attribute as a read-only property.
+
+        Returns:
+            str: The name attribute.
+        """
         return self._name
 
     @property
     def baseyear(self) -> int | None:
+        """Gets the base year value.
+
+        This property retrieves the value of the base year, if set. If the base year is not defined,
+        it will return None.
+
+        Returns:
+            int | None: The base year value if defined, otherwise None.
+        """
         return self._baseyear
 
     @baseyear.setter
     def baseyear(self, baseyear: int) -> None:
+        """Set the base year for all registered formulas.
+
+        Args:
+            baseyear: The base year to use when evaluating formulas.
+
+        Raises:
+            TypeError: If baseyear is not an int.
+        """
         if not isinstance(baseyear, int):
             raise TypeError("baseyear must be int")
         for _, formula in self.formulae.items():
@@ -44,10 +85,20 @@ class PreSystem:
 
     @property
     def formulae(self) -> dict[str, Formula]:
+        """Mapping of formula names to Formula instances.
+
+        Returns:
+            dict[str, Formula]: Registered formulas keyed by name.
+        """
         return self._formulae
 
     @property
     def indicators(self) -> list[str]:
+        """All unique indicator names referenced by registered formulas.
+
+        Returns:
+            list[str]: List of unique indicator identifiers used across formulas.
+        """
         indicator_set: set[str] = set()
         for _, formula in self.formulae.items():
             indicator_set = indicator_set.union(formula.indicators)
@@ -55,6 +106,11 @@ class PreSystem:
 
     @property
     def annuals_df(self) -> pd.DataFrame | None:
+        """Annual level data.
+
+        Returns:
+            pd.DataFrame | None: Annual series indexed by PeriodIndex with annual frequency.
+        """
         return self._annuals_df
 
     @annuals_df.setter
@@ -88,6 +144,11 @@ class PreSystem:
 
     @property
     def indicators_df(self) -> pd.DataFrame | None:
+        """Indicator series used by formulas.
+
+        Returns:
+            pd.DataFrame | None: Indicator series indexed by PeriodIndex.
+        """
         return self._indicators_df
 
     @indicators_df.setter
@@ -118,6 +179,11 @@ class PreSystem:
 
     @property
     def weights_df(self) -> pd.DataFrame | None:
+        """Optional weights used by some formulas.
+
+        Returns:
+            pd.DataFrame | None: Annual weights indexed by PeriodIndex with annual frequency.
+        """
         return self._weights_df
 
     @weights_df.setter
@@ -151,6 +217,11 @@ class PreSystem:
 
     @property
     def corrections_df(self) -> pd.DataFrame | None:
+        """Optional corrections to adjust indicator series.
+
+        Returns:
+            pd.DataFrame | None: Corrections indexed by PeriodIndex with same frequency as indicators.
+        """
         return self._corrections_df
 
     @corrections_df.setter
@@ -182,6 +253,14 @@ class PreSystem:
 
     @staticmethod
     def _check_missing(df: pd.DataFrame) -> None:
+        """Warn if the provided DataFrame contains missing values.
+
+        Args:
+            df (pd.DataFrame): Data to check.
+
+        Notes:
+            Prints a warning listing columns with NaN values. Does not raise.
+        """
         count_missing = df.isna().sum()
         if count_missing.sum() > 0:
             print(
@@ -189,9 +268,19 @@ class PreSystem:
             )
 
     def __repr__(self) -> str:
+        """Return a debug representation of the PreSystem.
+
+        Returns:
+            str: Representation including the pre-system name.
+        """
         return f"PreSystem: {self.name}"
 
     def info(self) -> None:
+        """Print a human-readable summary of the PreSystem configuration.
+
+        Notes:
+            Writes to stdout; intended for quick inspection during development.
+        """
         print(
             "\n".join(
                 [

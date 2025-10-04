@@ -13,6 +13,42 @@ def chain_df(
     endyear: int | None = None,
     appendvlname: bool = False,
 ) -> pd.DataFrame:
+    """Chaining economic time series data.
+
+    Processes and validates data for chaining economic time series data, ensuring proper
+    formats, types, and constraints across two dataframes. Also, performs warnings for
+    data issues like NaN values or missing data columns while preparing time series for
+    year-over-year chaining.
+
+    This function validates the input dataframes, extracts overlapping column series based on
+    user input or intersection of dataframe columns, and ensures proper filtering to only include
+    non-problematic data for all chaining operations. Columns with issues such as
+    non-numeric data, NaN values, or zero-only values are warned about, and will be excluded
+    from chaining processing. The function also checks for start, end, and base year constraints,
+    ensuring valid time ranges for chaining.
+
+    Args:
+        val_df: Input dataframe containing current price values data used for chaining.
+        fp_df: Input dataframe containing fixed price values data used for chaining.
+        serieslist: List of column names, a single string, or None specifying
+            the series to chain. Uses the intersection of columns from the dataframes if None.
+        baseyear: An integer specifying the base year for chaining operations.
+            Must be within valid constraints.
+        startyear: Specifies the start year for limiting the chaining range. Computes
+            automatically based on data ranges if not provided.
+        endyear: Specifies the end year for limiting the chaining range. Computes
+            automatically based on data ranges if not provided.
+        appendvlname: Whether to append suffix/prefix to chained series. Defaults to False.
+
+    Returns:
+        pd.DataFrame: A dataframe containing the chained series for all specified or detected
+        valid columns in the input dataframes. Columns with detected issues are excluded from the output.
+
+    Raises:
+        TypeError: If invalid types or indices are encountered in inputs, or if year constraints fail.
+        AssertionError: If the selected start or end year is not present in either
+            the indicator or target DataFrames
+    """
     # Checking dfs object type.
     if not isinstance(val_df, pd.DataFrame):
         raise TypeError("The value dataframe is not a pd.DataFrame.")

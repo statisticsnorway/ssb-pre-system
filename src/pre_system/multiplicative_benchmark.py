@@ -23,68 +23,55 @@ def multiplicative_benchmark(
     divided by a ratio of their aggregated sums to the target values, and
     then interpolated back to the high-frequency index.
 
-    Author: Magnus Helliesen Kvåle and Vemund Rundberget, Seksjon for makroøkonomi, Forksningsavdelingen, SSB
+    Author: Magnus Helliesen Kvåle, National accounts Department and
+    Vemund Rundberget, Macroeconomics Department, Research Division, SSB
 
-    Parameters
-    ----------
-    df_indicator : pd.DataFrame
-        DataFrame containing the indicator series to be benchmarked.
-        Must have a `PeriodIndex` at a higher frequency (e.g., monthly).
-    df_target : pd.DataFrame
-        DataFrame containing the target (benchmark) series.
-        Must have a `PeriodIndex` at a lower frequency (e.g., yearly).
-    liste_km : list of str or str
-        List of series names (columns) to benchmark.
-        If a single string is provided, it is automatically wrapped into a list.
-    startyear : int
-        The starting year (inclusive) of the benchmarking period.
-    endyear : int
-        The ending year (inclusive) of the benchmarking period.
-        Must be <= 2099.
+    Args:
+      df_indicator: DataFrame with the high-frequency indicator series.
+          Must have a PeriodIndex at a higher frequency (e.g., monthly).
+      df_target: DataFrame with the low-frequency target (benchmark) series.
+          Must have a PeriodIndex at a lower frequency (e.g., yearly).
+      liste_km: Column names to benchmark. If a single string is provided,
+          it will be wrapped in a list.
+      startyear: The starting year (inclusive) of the benchmarking period.
+      endyear: The ending year (inclusive) of the benchmarking period.
+          Must be <= 2099.
 
     Returns:
-    -------
-    pd.DataFrame
-        A DataFrame with the benchmarked indicator series, indexed by the
-        same frequency as `df_indicator`.
+      pd.DataFrame: A DataFrame with the benchmarked indicator series, indexed by the
+          same frequency as `df_indicator`.
 
     Raises:
-    ------
-    TypeError
-        If the inputs are not DataFrames, indices not PeriodIndex,
-        or if the parameters are of incorrect type.
-    AssertionError
-        If the chosen start or end years are not available in either
+      TypeError: If inputs are not DataFrames, indices are not PeriodIndex, or
+        parameters have incorrect types.
+      AssertionError: If the selected start or end year is not present in either
         the indicator or target DataFrames.
-    UserWarning
-        Issued if zero-only series, non-numeric values, or NaNs are
-        detected in the input data.
+
+    Warns:
+      UserWarning: If zero-only series, non-numeric values, or NaNs are detected.
+        Such series are excluded from benchmarking.
 
     Notes:
-    -----
-    - Any series containing only zeros, non-numeric values, or NaNs
-      will be excluded from benchmarking.
-    - The method ensures consistency: the sum of the adjusted indicator
-      series over a target period will exactly match the corresponding
-      target value.
-    - This is equivalent to the multiplicative Denton method used in
-      temporal disaggregation of time series.
+      - Series containing only zeros, non-numeric values, or NaNs are excluded.
+      - Consistency is ensured: the sum of the adjusted indicator over a target
+        period exactly matches the corresponding target value.
+      - Equivalent to the multiplicative Denton method used in temporal
+        disaggregation of time series.
 
     Examples:
-    --------
-    >>> import pandas as pd
-    >>> from pre_system.multiplicative_benchmark import multiplicative_benchmark
-    >>> idx_monthly = pd.period_range("2018-01", "2019-12", freq="M")
-    >>> idx_yearly = pd.period_range("2018", "2019", freq="Y")
-    >>> df_indicator = pd.DataFrame({"A": range(len(idx_monthly))}, index=idx_monthly)
-    >>> df_target = pd.DataFrame({"A": [66, 210]}, index=idx_yearly)
-    >>> multiplicative_benchmark(df_indicator, df_target, "A", 2018, 2019).head()
-               A
-    2018-01  0.0
-    2018-02  1.0
-    2018-03  2.0
-    2018-04  3.0
-    2018-05  4.0
+      >>> import pandas as pd
+      >>> from pre_system.multiplicative_benchmark import multiplicative_benchmark
+      >>> idx_monthly = pd.period_range("2018-01", "2019-12", freq="M")
+      >>> idx_yearly = pd.period_range("2018", "2019", freq="Y")
+      >>> df_indicator = pd.DataFrame({"A": range(len(idx_monthly))}, index=idx_monthly)
+      >>> df_target = pd.DataFrame({"A": [66, 210]}, index=idx_yearly)
+      >>> multiplicative_benchmark(df_indicator, df_target, "A", 2018, 2019).head()
+                 A
+      2018-01  0.0
+      2018-02  1.0
+      2018-03  2.0
+      2018-04  3.0
+      2018-05  4.0
     """
     # Checking object types.
     if not isinstance(df_indicator, pd.DataFrame):

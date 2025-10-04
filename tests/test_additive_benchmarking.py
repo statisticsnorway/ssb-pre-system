@@ -15,10 +15,10 @@
 
 # %%
 import re
+from typing import cast
 
 import pandas as pd
 import pytest
-from typing import cast
 
 from pre_system.additive_benchmark import additive_benchmark
 

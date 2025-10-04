@@ -16,35 +16,75 @@ pre\_system package
 ===================
 
 
+pre\_system.additive\_benchmark module
+--------------------------------------
+
+.. automodule:: pre_system.additive_benchmark
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pre\_system.chaining module
+---------------------------
+
+.. automodule:: pre_system.chaining
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 pre\_system.convert module
 --------------------------
 
 .. automodule:: pre_system.convert
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 pre\_system.formula module
 --------------------------
 
 .. automodule:: pre_system.formula
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
+
+pre\_system.mind4 module
+------------------------
+
+.. automodule:: pre_system.mind4
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pre\_system.minm4 module
+------------------------
+
+.. automodule:: pre_system.minm4
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pre\_system.multiplicative\_benchmark module
+--------------------------------------------
+
+.. automodule:: pre_system.multiplicative_benchmark
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
 pre\_system.overlay module
 --------------------------
 
 .. automodule:: pre_system.overlay
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 
 pre\_system.pre\_system module
 ------------------------------
 
 .. automodule:: pre_system.pre_system
    :members:
-   :undoc-members:
    :show-inheritance:
+   :undoc-members:
 ```
