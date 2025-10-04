@@ -13,6 +13,42 @@ def chain_df(
     endyear: int | None = None,
     appendvlname: bool = False,
 ) -> pd.DataFrame:
+    """Chaining economic time series data.
+
+    Processes and validates data for chaining economic time series data, ensuring proper
+    formats, types, and constraints across two dataframes. Also, performs warnings for
+    data issues like NaN values or missing data columns while preparing time series for
+    year-over-year chaining.
+
+    This function validates the input dataframes, extracts overlapping column series based on
+    user input or intersection of dataframe columns, and ensures proper filtering to only include
+    non-problematic data for all chaining operations. Columns with issues such as
+    non-numeric data, NaN values, or zero-only values are warned about, and will be excluded
+    from chaining processing. The function also checks for start, end, and base year constraints,
+    ensuring valid time ranges for chaining.
+
+    Args:
+        val_df: Input dataframe containing current price values data used for chaining.
+        fp_df: Input dataframe containing fixed price values data used for chaining.
+        serieslist: List of column names, a single string, or None specifying
+            the series to chain. Uses the intersection of columns from the dataframes if None.
+        baseyear: An integer specifying the base year for chaining operations.
+            Must be within valid constraints.
+        startyear: Specifies the start year for limiting the chaining range. Computes
+            automatically based on data ranges if not provided.
+        endyear: Specifies the end year for limiting the chaining range. Computes
+            automatically based on data ranges if not provided.
+        appendvlname: Whether to append suffix/prefix to chained series. Defaults to False.
+
+    Returns:
+        pd.DataFrame: A dataframe containing the chained series for all specified or detected
+        valid columns in the input dataframes. Columns with detected issues are excluded from the output.
+
+    Raises:
+        TypeError: If invalid types or indices are encountered in inputs, or if year constraints fail.
+        AssertionError: If the selected start or end year is not present in either
+            the indicator or target DataFrames
+    """
     # Checking dfs object type.
     if not isinstance(val_df, pd.DataFrame):
         raise TypeError("The value dataframe is not a pd.DataFrame.")
@@ -40,7 +76,7 @@ def chain_df(
     if serieslist is None:
         serieslist = np.intersect1d(val_df.columns, fp_df.columns).tolist()
 
-    if not (isinstance(serieslist, list) or isinstance(serieslist, str)):
+    if not isinstance(serieslist, (list, str)):
         raise TypeError(
             "You need to create a list of all the series you wish to chain, and it must be in the form of a list or string."
         )
@@ -59,9 +95,9 @@ def chain_df(
 
     # Filters out series not sent to chaining.
     val_df_of_concern = val_df[val_df.columns[val_df.columns.isin(serieslist)]]
-    if not isinstance(
-        val_df_of_concern.index, pd.PeriodIndex
-    ):  # Ensure index is PeriodIndex for .year
+
+    # Ensure index is PeriodIndex for .year
+    if not isinstance(val_df_of_concern.index, pd.PeriodIndex):
         raise TypeError("val_df_of_concern index must be a PeriodIndex.")
     val_df_of_concern = val_df_of_concern[
         (val_df_of_concern.index.year <= endyear)
@@ -69,9 +105,9 @@ def chain_df(
     ]
 
     fp_df_of_concern = fp_df[fp_df.columns[fp_df.columns.isin(serieslist)]]
-    if not isinstance(
-        fp_df_of_concern.index, pd.PeriodIndex
-    ):  # Ensure index is PeriodIndex for .year
+
+    # Ensure index is PeriodIndex for .year
+    if not isinstance(fp_df_of_concern.index, pd.PeriodIndex):
         raise TypeError("val_df_of_concern index must be a PeriodIndex.")
     # Filters out series not sent to chaining.
     fp_df_of_concern = fp_df_of_concern[
@@ -100,13 +136,13 @@ def chain_df(
             valintwarnlist.append(f"{col}")
     if len(valintwarnlist) > 0:
         warnings.warn(
-            f"There are values in {valintwarnlist} in the value dataframe that are not real numbers. Skipping sending these to benchmarking.",
+            f"There are values in {valintwarnlist} in the value dataframe that are not real numbers. Skipping sending these to chaining.",
             UserWarning,
             stacklevel=2,
         )
     if val_df_of_concern.isna().any().any() is np.True_:  # NaN check.
         warnings.warn(
-            f"There are NaN-values in {val_df_of_concern.columns[val_df_of_concern.isna().any()].to_list()} in the value dataframe.",
+            f"There are NaN-values in {val_df_of_concern.columns[val_df_of_concern.isna().any()].to_list()} in the value dataframe. Skipping sending these to chaining.",
             UserWarning,
             stacklevel=2,
         )
@@ -133,25 +169,25 @@ def chain_df(
             fpintwarnlist.append(f"{col}")
     if len(fpintwarnlist) > 0:
         warnings.warn(
-            f"There are values in {fpintwarnlist} in the fixed price dataframe that are not real numbers. Skipping sending these to benchmarking.",
+            f"There are values in {fpintwarnlist} in the fixed price dataframe that are not real numbers. Skipping sending these to chaining.",
             UserWarning,
             stacklevel=2,
         )
     if fp_df_of_concern.isna().any().any() is np.True_:  # NaN check.
         warnings.warn(
-            f"There are NaN-values in {fp_df_of_concern.columns[fp_df_of_concern.isna().any()].to_list()} in the fixed price dataframe.",
+            f"There are NaN-values in {fp_df_of_concern.columns[fp_df_of_concern.isna().any()].to_list()} in the fixed price dataframe. Skipping sending these to chaining.",
             UserWarning,
             stacklevel=2,
         )
 
-    # valintwarnlist
+    # Filters out valintwarnlist
     val_df_of_concern = val_df_of_concern[
         [col for col in val_df_of_concern.columns if col not in valintwarnlist]
     ]
     fp_df_of_concern = fp_df_of_concern[
         [col for col in fp_df_of_concern.columns if col not in valintwarnlist]
     ]
-    # mnrintwarnlist
+    # Filters out fpintwarnlist
     val_df_of_concern = val_df_of_concern[
         [col for col in val_df_of_concern.columns if col not in fpintwarnlist]
     ]
@@ -161,7 +197,13 @@ def chain_df(
     serieslist = [
         serie
         for serie in serieslist
-        if serie not in valintwarnlist and serie not in fpintwarnlist
+        if serie
+        not in (
+            valintwarnlist
+            + fpintwarnlist
+            + fp_df_of_concern.columns[fp_df_of_concern.isna().any()].to_list()
+            + val_df_of_concern.columns[val_df_of_concern.isna().any()].to_list()
+        )
     ]
 
     # Check years are not None and are int
