@@ -108,6 +108,27 @@ def convert(input_df: pd.DataFrame, to_freq: str) -> pd.DataFrame:
 
 
 def convert_step(input_df: pd.DataFrame, to_freq: str) -> pd.DataFrame:
+    """Converts a time series DataFrame from one periodic frequency to another.
+
+    The input DataFrame is expected to have a PeriodIndex as its index and consist of
+    numeric columns. The conversion can be performed for annual, quarterly, or monthly
+    frequencies, specified in the `to_freq` parameter.
+
+    Args:
+        input_df: The input DataFrame with a PeriodIndex as its index and numeric columns
+            representing time series data.
+        to_freq: The desired periodic frequency to which the input DataFrame should
+            be converted. Valid values are "A" (Annual), "Q" (Quarterly), or "M"
+            (Monthly).
+
+    Returns:
+        pd.DataFrame: A DataFrame resampled and converted to the desired frequency,
+            preserving the numeric structure of the input time series.
+
+    Raises:
+        TypeError: If the input DataFrame does not have a PeriodIndex or non-numeric columns.
+        ValueError: If the conversion is not possible for the given input frequency.
+    """
     if not isinstance(input_df.index, pd.PeriodIndex):
         raise TypeError("DataFrame must have PeriodIndex")
 

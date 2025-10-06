@@ -37,6 +37,8 @@ def mind4(
     allows scaling adjustments for leading and trailing periods using specified start and
     basis years, which determine the timeframe of analysis.
 
+    Author: Vemund Rundberget, Seksjon for makroøkonomi, Forksningsavdelingen, SSB
+
     Args:
         mnr: DataFrame with monthly or quarterly data having a pd.PeriodIndex.
         rea: DataFrame with annual data having a pd.PeriodIndex.
@@ -69,7 +71,7 @@ def mind4(
 
     # CHECKS.
     # Checking object type.
-    if not (isinstance(liste_d4, list) or isinstance(liste_d4, str)):
+    if not isinstance(liste_d4, (list, str)):
         raise TypeError(
             "You need to create a list of all the series you wish to benchmark, and it must be in the form of a list or string."
         )
@@ -82,22 +84,21 @@ def mind4(
         raise TypeError(f"The {periodely} dataframe is not a DataFrame.")
     if not isinstance(mnr.index, pd.PeriodIndex):
         raise TypeError(f"The {periodely} dataframe does not have a pd.PeriodIndex.")
+    if not pd.Series(liste_d4).isin(mnr.columns).all():
+        raise TypeError(
+            f"{np.setdiff1d(liste_d4, mnr.columns).tolist()} are missing in the {periodely} dataframe."
+        )
 
-    mnr_of_concern = mnr[
-        mnr.columns[mnr.columns.isin(liste_d4)]
-    ]  # Filters out series not sent to benchmarking.
+    # Filters out series not sent to benchmarking.
+    mnr_of_concern = mnr[mnr.columns[mnr.columns.isin(liste_d4)]]
     mask_mnr = (mnr_of_concern.index.year <= basisaar) & (  # type: ignore[attr-defined]
         mnr_of_concern.index.year >= startaar  # type: ignore[attr-defined]
     )
     mnr_of_concern = mnr_of_concern.loc[mask_mnr, :]
 
-    if not pd.Series(liste_d4).isin(mnr.columns).all():
-        raise TypeError(
-            f"{np.setdiff1d(liste_d4, mnr.columns).tolist()} are missing in the {periodely} dataframe."
-        )
     if mnr_of_concern.isna().any().any() is np.True_:
         warnings.warn(
-            f"There are NaN-values in {mnr_of_concern.columns[mnr_of_concern.isna().any()].to_list()} in the {periodely} dataframe.",
+            f"There are NaN-values in {mnr_of_concern.columns[mnr_of_concern.isna().any()].to_list()} in the {periodely} dataframe. Skipping sending these to benchmarking.",
             UserWarning,
             stacklevel=2,
         )
@@ -132,22 +133,21 @@ def mind4(
         raise TypeError("The yearly dataframe is not a DataFrame.")
     if not isinstance(rea.index, pd.PeriodIndex):
         raise TypeError("The yearly dataframe does not have a pd.PeriodIndex.")
+    if not pd.Series(liste_d4).isin(rea.columns).all():
+        raise TypeError(
+            f"{np.setdiff1d(liste_d4, rea.columns).tolist()} are missing in the yearly dataframe."
+        )
 
-    rea_of_concern = rea[
-        rea.columns[rea.columns.isin(liste_d4)]
-    ]  # Filters out series not sent to benchmarking.
+    # Filters out series not sent to benchmarking.
+    rea_of_concern = rea[rea.columns[rea.columns.isin(liste_d4)]]
     mask_rea = (rea_of_concern.index.year <= basisaar) & (  # type: ignore[attr-defined]
         rea_of_concern.index.year >= startaar  # type: ignore[attr-defined]
     )
     rea_of_concern = rea_of_concern.loc[mask_rea, :]
 
-    if not pd.Series(liste_d4).isin(rea.columns).all():
-        raise TypeError(
-            f"{np.setdiff1d(liste_d4, rea.columns).tolist()} are missing in the yearly dataframe."
-        )
     if rea_of_concern.isna().any().any() is np.True_:
         warnings.warn(
-            f"There are NaN-values in {rea_of_concern.columns[rea_of_concern.isna().any()].to_list()} in the yearly dataframe.",
+            f"There are NaN-values in {rea_of_concern.columns[rea_of_concern.isna().any()].to_list()} in the yearly dataframe. Skipping sending these to benchmarking.",
             UserWarning,
             stacklevel=2,
         )
@@ -193,14 +193,24 @@ def mind4(
     liste_d4 = [
         serie
         for serie in liste_d4
-        if serie not in reaintwarnlist and serie not in mnrintwarnlist
+        if serie
+        not in (
+            reaintwarnlist
+            + mnrintwarnlist
+            + mnr_of_concern.columns[mnr_of_concern.isna().any()].to_list()
+            + rea_of_concern.columns[rea_of_concern.isna().any()].to_list()
+        )
     ]
 
-    m_years = set(mnr_of_concern.index.year.unique())
-    r_years = set(rea_of_concern.index.year)
-    missing_years = m_years.difference(r_years)
-    if missing_years != set():
-        raise TypeError(f"There aren't values in both series for {missing_years}.")
+    if (
+        not set(mnr_of_concern.index.year.unique()).difference(
+            set(rea_of_concern.index.year)
+        )
+        == set()
+    ):
+        raise TypeError(
+            f"There aren't values in both series for {set(mnr_of_concern.index.year.unique()).difference(set(rea_of_concern.index.year))}."
+        )
 
     if not isinstance(startaar, int):
         raise TypeError("The start year must be an integer.")
@@ -212,9 +222,6 @@ def mind4(
         )
     if basisaar < startaar:
         raise TypeError("The start year cannot be greater than the final year.")
-
-    print("The inputdata passed the checks.\n")
-    # CHECKS DONE.
 
     # Preperation of input data.
 
@@ -231,7 +238,7 @@ def mind4(
             flush=True,
         )
 
-        # Laster maneds- og aarstall
+        # Loads monthly and yearly values
         datam_ = mnr_of_concern[elem].values
         datay_ = rea_of_concern[elem].values
 
@@ -322,11 +329,10 @@ def mind4(
         + rea_of_concern.columns[rea_of_concern.isna().any()].to_list()
     )
     for elem in set(liste_d4) - set(skippe):
-        cond = (
+        if (
             ((res.resample("Y").sum() - rea_of_concern) >= -1)
             & ((res.resample("Y").sum() - rea_of_concern) <= 1)
-        ).all()[elem]
-        if not bool(cond):
+        ).all()[elem] is not np.True_:
             warnings.warn(
                 f"There are deviations on the benchmarked totals in {elem} so something did not go well.",
                 UserWarning,

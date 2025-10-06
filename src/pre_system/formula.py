@@ -10,6 +10,19 @@ import pandas as pd
 
 
 class Formula:
+    """Abstract base class for all pre-system formulas.
+
+    Provides a common interface and input validation for computing time
+    series from annual levels, indicator series, optional weights, and
+    optional corrections. Subclasses supply the concrete computation
+    in the what property, indicators_weights, and evaluate.
+
+    Attributes:
+        _name (str): Lower-cased identifier of the formula.
+        _baseyear (int | None): Base year used for normalisation and alignment.
+        _calls_on (dict[str, Formula]): Dependency formulas used by this formula.
+    """
+
     # TODO: Check why this class uses _baseyear as both a class variable and
     # an instance variable. The instance variable hides the class variable and
     # causes confusion. Check if one of them can be renamed.
@@ -36,32 +49,71 @@ class Formula:
 
     @property
     def name(self) -> str:
+        """Formula name.
+
+        Returns:
+            str: Lower-cased unique name of the formula.
+        """
         return self._name
 
     @property
     def baseyear(self) -> int | None:
+        """Base year used by the formula.
+
+        Returns:
+            int | None: The base year if set; otherwise None.
+        """
         return self._baseyear
 
     @baseyear.setter
     def baseyear(self, baseyear: int) -> None:
+        """Set the base year for this formula.
+
+        Args:
+            baseyear: Year used for normalisation and alignment.
+
+        Raises:
+            TypeError: If baseyear is not an int.
+        """
         if not isinstance(baseyear, int):
             raise TypeError("baseyear must be int")
         self._baseyear = baseyear
 
     @property
     def what(self) -> str:
+        """Algebraic representation of the formula.
+
+        Returns:
+            str: A human-readable expression describing how the series is computed.
+        """
         return ""
 
     @property
     def calls_on(self) -> dict[str, Formula]:
+        """Dependencies this formula uses.
+
+        Returns:
+            dict[str, Formula]: Mapping of dependency names to Formula instances.
+        """
         return self._calls_on
 
     @property
     def indicators(self) -> list[str]:
+        """Indicator column names referenced by this formula.
+
+        Returns:
+            list[str]: Indicator identifiers expected in indicators_df.
+        """
         return []
 
     @property
     def weights(self) -> list[str] | list[float]:
+        """Weights used by the formula.
+
+        Returns:
+            list[str] | list[float]: Either names of weight columns (to be
+            read from weights_df) or constant numeric weights.
+        """
         return []
 
     def __repr__(self) -> str:
@@ -75,26 +127,78 @@ class Formula:
         correction_df: pd.DataFrame | None = None,
         test_dfs: bool = True,
     ) -> pd.Series:
+        """Evaluate the formula by calling the instance.
+
+        This is shorthand for calling evaluate(...).
+
+        Args:
+            annual_df: Annual level series.
+            indicators_df: Indicator series.
+            weights_df: Optional weights.
+            correction_df: Optional corrections.
+            test_dfs: Whether to validate input DataFrames.
+
+        Returns:
+            pd.Series: The evaluated time series.
+        """
         return self.evaluate(
             annual_df, indicators_df, weights_df, correction_df, test_dfs=test_dfs
         )
 
     def __add__(self, other: Formula) -> FSum:
+        """Create a summed formula.
+
+        Args:
+            other: The right-hand formula to add.
+
+        Returns:
+            FSum: A formula representing self + other.
+        """
         return FSum(f"{self.name}+{other.name}", self, other)
 
     def __mul__(self, other: Formula) -> FMult:
+        """Create a product formula.
+
+        Args:
+            other: The right-hand formula to multiply by.
+
+        Returns:
+            FMult: A formula representing self * other.
+        """
         return FMult(f"{self.name}*{other.name}", self, other)
 
     def __truediv__(self, other: Formula) -> FDiv:
+        """Create a division formula.
+
+        Args:
+            other: The right-hand formula to divide by.
+
+        Returns:
+            FDiv: A formula representing self / other.
+        """
         return FDiv(f"{self.name}/{other.name}", self, other)
 
     def info(self, i: int = 0) -> None:
+        """Print a tree view of this formula and its dependencies.
+
+        Args:
+            i: Indentation level used internally for recursion.
+        """
         what = self.what if len(self.what) <= 100 else "..."
         print(f'{" "*i}{self.name} = {what}')
         for _, val in self.calls_on.items():
             val.info(i + 1)
 
     def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
+        """List indicator-weight pairs contributing to this formula.
+
+        Args:
+            trace: If True, include pairs from dependencies as well.
+
+        Returns:
+            list[tuple[str, float]]: List of (indicator, weight) pairs. The
+            weight may be a float or a name that resolves to a weight series.
+        """
         return []
 
     def evaluate(
@@ -121,8 +225,7 @@ class Formula:
             A dummy pd.Series object. The return value is only valid for subclasses.
 
         Raises:
-            ValueError: If the base year is not set or is out of range for the provided
-                data.
+            ValueError: If the base year is not set or is out of range for the provided data.
             AttributeError: If the index of any input DataFrame is not a Pandas
                 PeriodIndex or if the frequency is incorrect.
         """
@@ -166,6 +269,13 @@ class Formula:
 
 
 class Indicator(Formula):
+    """Indicator-based disaggregation formula.
+
+    Uses one or more indicator series, optionally with weights and an
+    optional correction factor, to distribute an annual level across
+    sub-annual periods. See __init__ for parameter details.
+    """
+
     def __init__(
         self,
         name: str,
@@ -218,16 +328,34 @@ class Indicator(Formula):
 
     @property
     def indicators(self) -> list[str]:
+        """Indicator column names used by this formula.
+
+        Returns:
+            list[str]: Indicator identifiers expected in indicators_df.
+        """
         return self._indicators
 
     @property
     def weights(self) -> list[str] | list[float]:
+        """Weights to apply to indicators.
+
+        Returns:
+            list[str] | list[float]: Either names of weight columns (from
+            weights_df) or constant numeric weights. Defaults to 1.0 per
+            indicator when not provided.
+        """
         if self._weights:
             return self._weights
         return [1.0 for _ in self.indicators]
 
     @property
     def what(self) -> str:
+        """Textual representation of this indicator formula.
+
+        Returns:
+            str: Expression showing how the annual level is distributed by
+            indicators (optionally weighted, normalised, and corrected).
+        """
         correction = f"{self._correction}*" if self._correction else ""
 
         if self._normalise:
@@ -254,6 +382,18 @@ class Indicator(Formula):
         return f"{self._annual.lower()}*<date {self.baseyear}>*{fraction}"
 
     def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
+        """Indicator-weight pairs for this indicator formula.
+
+        Args:
+            trace: Ignored for this class; included for API symmetry.
+
+        Returns:
+            list[tuple[str, float]]: Pairs of indicators with their numeric
+            weights. Raises TypeError if any weight is not a float.
+
+        Raises:
+            TypeError: If any weight is not a float.
+        """
         if not all(isinstance(x, float) for x in self.weights):
             raise TypeError("all weights must be of type float")
         return [(x, y) for x, y in zip(self.indicators, self.weights, strict=True)]  # type: ignore
@@ -369,6 +509,13 @@ class Indicator(Formula):
 
 
 class FDeflate(Formula):
+    """Deflate a base formula by indicator(s).
+
+    Computes a series proportional to a base formula divided by (possibly
+    weighted) indicator(s), optionally normalised and corrected. See
+    `__init__` for parameter details.
+    """
+
     def __init__(
         self,
         name: str,
@@ -416,16 +563,34 @@ class FDeflate(Formula):
 
     @property
     def indicators(self) -> list[str]:
+        """Indicator column names used by this deflation formula.
+
+        Returns:
+            list[str]: Indicator identifiers expected in indicators_df.
+        """
         return self._indicators
 
     @property
     def weights(self) -> list[str] | list[float]:
+        """Weights to apply to indicators in deflation.
+
+        Returns:
+            list[str] | list[float]: Either names of weight columns (from
+            weights_df) or constant numeric weights. Defaults to 1.0 per
+            indicator when not provided.
+        """
         if self._weights:
             return self._weights
         return [1.0 for _ in self.indicators]
 
     @property
     def what(self) -> str:
+        """Textual representation of this deflation formula.
+
+        Returns:
+            str: Expression showing base formula divided by weighted indicators
+            (optionally normalised and corrected) and scaled to the base year.
+        """
         correction = f"{self._correction}*" if self._correction else ""
 
         if self._normalise:
@@ -452,6 +617,15 @@ class FDeflate(Formula):
         return f"sum({self._formula.name}<date {self.baseyear}>)*{fraction}"
 
     def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
+        """Indicator-weight pairs for this indicator formula.
+
+        Args:
+            trace: Ignored for this class; included for API symmetry.
+
+        Returns:
+            list[tuple[str, float]]: Pairs of indicators with their numeric
+            weights. Raises TypeError if any weight is not a float.
+        """
         return [(x, y) for x, y in zip(self.indicators, self.weights, strict=True)] + (
             self._formula.indicators_weights(trace=trace) if trace else []
         )  # type: ignore [return-value]
@@ -464,6 +638,22 @@ class FDeflate(Formula):
         correction_df: pd.DataFrame | None = None,
         test_dfs: bool = True,
     ) -> pd.Series:
+        """Evaluate the deflation formula.
+
+        Args:
+            annual_df: Annual level series.
+            indicators_df: Indicator series.
+            weights_df: Optional weights used to combine indicators.
+            correction_df: Optional correction series applied after deflation.
+            test_dfs: Whether to validate inputs (recommended).
+
+        Returns:
+            pd.Series: The deflated series aligned to the indicator frequency.
+
+        Raises:
+            NameError: If a required column name is missing from one of the DataFrames.
+            AttributeError: If the index is not of type pd.PeriodIndex or has an incorrect frequency.
+        """
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs, test_dfs=test_dfs)
 
@@ -531,6 +721,13 @@ class FDeflate(Formula):
 
 
 class FInflate(Formula):
+    """Inflate a base formula by indicator(s).
+
+    Computes a series proportional to a base formula multiplied by
+    (possibly weighted) indicator(s), optionally normalised and corrected.
+    See __init__ for parameter details.
+    """
+
     def __init__(
         self,
         name: str,
@@ -578,16 +775,35 @@ class FInflate(Formula):
 
     @property
     def indicators(self) -> list[str]:
+        """Indicator column names used by this inflation formula.
+
+        Returns:
+            list[str]: Indicator identifiers expected in indicators_df.
+        """
         return self._indicators
 
     @property
     def weights(self) -> list[str] | list[float]:
+        """Weights to apply to indicators in inflation.
+
+        Returns:
+            list[str] | list[float]: Either names of weight columns (from
+            weights_df) or constant numeric weights. Defaults to 1.0 per
+            indicator when not provided.
+        """
         if self._weights:
             return self._weights
         return [1.0 for _ in self.indicators]
 
     @property
     def what(self) -> str:
+        """Textual representation of this inflation formula.
+
+        Returns:
+            str: Expression showing base formula multiplied by weighted
+            indicators (optionally normalised and corrected) and scaled to
+            the base year.
+        """
         correction = f"{self._correction}*" if self._correction else ""
 
         if self._normalise:
@@ -614,6 +830,15 @@ class FInflate(Formula):
         return f"sum({self._formula.name}<date {self.baseyear}>)*{fraction}"
 
     def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
+        """Indicator-weight pairs for this indicator formula.
+
+        Args:
+            trace: Ignored for this class; included for API symmetry.
+
+        Returns:
+            list[tuple[str, float]]: Pairs of indicators with their numeric
+            weights. Raises TypeError if any weight is not a float.
+        """
         return [(x, y) for x, y in zip(self.indicators, self.weights, strict=True)] + (
             self._formula.indicators_weights(trace=trace) if trace else []
         )  # type: ignore [return-value]
@@ -626,6 +851,22 @@ class FInflate(Formula):
         correction_df: pd.DataFrame | None = None,
         test_dfs: bool = True,
     ) -> pd.Series:
+        """Evaluate the inflation formula.
+
+        Args:
+            annual_df: Annual level series.
+            indicators_df: Indicator series.
+            weights_df: Optional weights used to combine indicators.
+            correction_df: Optional correction series applied after inflation.
+            test_dfs: Whether to validate inputs (recommended).
+
+        Returns:
+            pd.Series: The inflated series aligned to the indicator frequency.
+
+        Raises:
+            NameError: If a required column name is missing from one of the DataFrames.
+            AttributeError: If the index is not of type pd.PeriodIndex or has an incorrect frequency.
+        """
         all_dfs = (annual_df, indicators_df, weights_df, correction_df)
         super().evaluate(*all_dfs, test_dfs=test_dfs)
 
@@ -693,6 +934,11 @@ class FInflate(Formula):
 
 
 class FSum(Formula):
+    """Sum of multiple formulas.
+
+    Produces a series that is the element-wise sum of its operand formulas.
+    """
+
     def __init__(self, name: str, *formulae: Formula) -> None:
         """Initialize an FSum object.
 
@@ -716,9 +962,28 @@ class FSum(Formula):
 
     @property
     def what(self) -> str:
+        """Textual representation of this sum formula.
+
+        Returns:
+            str: Expression showing the sum of operand formulas.
+        """
         return "+".join([x.name for x in self._formulae])
 
     def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
+        """Indicator-weight pairs for this indicator formula.
+
+        This method uses the `_formula.indicators_weights` to compute the indicator
+        weights when `trace` is set to `True`. If `trace` is `False`, it returns an
+        empty list.
+
+        Args:
+            trace: A flag to indicate whether to calculate the weights with or without tracing.
+
+        Returns:
+            list[tuple[str, float]]: A list of tuples where each tuple contains
+                the indicator name as a string and its corresponding weight
+                as a float. Returns an empty list if `trace` is False.
+        """
         indicators_weights = []
         if trace:
             for formula in self._formulae:
@@ -779,6 +1044,12 @@ class FSum(Formula):
 
 
 class FSumProd(Formula):
+    """Weighted sum of products of formulas.
+
+    Computes a linear combination of operand formulas with either numeric
+    coefficients or weight column names.
+    """
+
     def __init__(
         self, name: str, formulae: list[Formula], weights: list[float] | list[str]
     ) -> None:
@@ -809,6 +1080,11 @@ class FSumProd(Formula):
 
     @property
     def what(self) -> str:
+        """Textual representation of this weighted sum-product formula.
+
+        Returns:
+            str: Expression showing the weighted sum of products of operand formulas.
+        """
         return "+".join(
             [
                 "*".join([x.name, str(y).lower()])
@@ -817,6 +1093,20 @@ class FSumProd(Formula):
         )
 
     def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
+        """Indicator-weight pairs for this indicator formula.
+
+        This method aggregates the weights of indicators from a collection of
+        formulas. If trace is set to True, the weights from each formula's
+        indicators are retrieved and combined.
+
+        Args:
+            trace: A flag to indicate whether to calculate the weights with or without tracing.
+
+        Returns:
+            list[tuple[str, float]]: A list of tuples where each tuple contains
+                the indicator name as a string and its corresponding weight
+                as a float.
+        """
         indicators_weights = []
         if trace:
             for formula in self._formulae:
@@ -897,7 +1187,22 @@ class FSumProd(Formula):
 
 
 class FMult(Formula):
+    """Element-wise product of two formulas.
+
+    Multiplies two formula series with matching indices.
+    """
+
     def __init__(self, name: str, formula1: Formula, formula2: Formula) -> None:
+        """Initialize an FMult object.
+
+        Args:
+            name: The name of the FMult object.
+            formula1: The first formula.
+            formula2: The second formula.
+
+        Raises:
+            TypeError: If any of the input formulas are not of type Formula.
+        """
         super().__init__(name)
         if not (isinstance(formula1, Formula) and isinstance(formula2, Formula)):
             raise TypeError("formula1 and formula2 must be of type Formula")
@@ -907,9 +1212,28 @@ class FMult(Formula):
 
     @property
     def what(self) -> str:
+        """Textual representation of this product formula.
+
+        Returns:
+            str: Expression showing the product of two operand formulas.
+        """
         return f"{self._formula1.name}*{self._formula2.name}"
 
     def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
+        """Indicator-weight pairs for this indicator formula.
+
+        This method aggregates the weights of indicators from a collection of
+        formulas. If trace is set to True, the weights from each formula's
+        indicators are retrieved and combined.
+
+        Args:
+            trace: A flag to indicate whether to calculate the weights with or without tracing.
+
+        Returns:
+            list[tuple[str, float]]: A list of tuples where each tuple contains
+                the indicator name as a string and its corresponding weight
+                as a float.
+        """
         indicators_weights = []
         if trace:
             for formula in [self._formula1, self._formula2]:
@@ -969,7 +1293,22 @@ class FMult(Formula):
 
 
 class FDiv(Formula):
+    """Element-wise division of two formulas.
+
+    Divides one formula series by another with matching indices.
+    """
+
     def __init__(self, name: str, formula1: Formula, formula2: Formula) -> None:
+        """Initialize an FDiv object.
+
+        Args:
+            name: The name of the FDiv object.
+            formula1: The numerator formula.
+            formula2: The denominator formula.
+
+        Raises:
+            TypeError: If any of the input formulas are not of type Formula.
+        """
         super().__init__(name)
         if not (isinstance(formula1, Formula) and isinstance(formula2, Formula)):
             raise TypeError("formula1 and formula2 must be of type Formula")
@@ -979,9 +1318,28 @@ class FDiv(Formula):
 
     @property
     def what(self) -> str:
+        """Textual representation of this division formula.
+
+        Returns:
+            str: Expression showing the division of two operand formulas.
+        """
         return f"{self._formula1.name}/{self._formula2.name}"
 
     def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
+        """Indicator-weight pairs for this indicator formula.
+
+        This method aggregates the weights of indicators from a collection of
+        formulas. If trace is set to True, the weights from each formula's
+        indicators are retrieved and combined.
+
+        Args:
+            trace: A flag to indicate whether to calculate the weights with or without tracing.
+
+        Returns:
+            list[tuple[str, float]]: A list of tuples where each tuple contains
+                the indicator name as a string and its corresponding weight
+                as a float.
+        """
         indicators_weights = []
         if trace:
             for formula in [self._formula1, self._formula2]:
@@ -1041,6 +1399,11 @@ class FDiv(Formula):
 
 
 class MultCorr(Formula):
+    """Apply a multiplicative correction to a formula.
+
+    Multiplies the evaluated series by a named correction series.
+    """
+
     def __init__(self, formula: Formula, correction_name: str) -> None:
         """Initialize a MultCorr object.
 
@@ -1065,6 +1428,11 @@ class MultCorr(Formula):
 
     @property
     def baseyear(self) -> int | None:
+        """Base year used for the correction formula.
+
+        Returns:
+            int | None: The base year if set, otherwise None.
+        """
         return self._baseyear
 
     @baseyear.setter
@@ -1077,6 +1445,11 @@ class MultCorr(Formula):
 
     @property
     def what(self) -> str:
+        """Textual representation of this multiplicative correction formula.
+
+        Returns:
+            str: Expression showing the multiplicative correction applied to the formula.
+        """
         return (
             f"sum(({self._formula.what})<date {self.baseyear}>)*"
             f"{self._correction_name}*({self._formula.what})/"
@@ -1084,6 +1457,20 @@ class MultCorr(Formula):
         )
 
     def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
+        """Indicator-weight pairs for this indicator formula.
+
+        This method uses the `_formula.indicators_weights` to compute the indicator
+        weights when `trace` is set to `True`. If `trace` is `False`, it returns an
+        empty list.
+
+        Args:
+            trace: A flag to indicate whether to calculate the weights with or without tracing.
+
+        Returns:
+            list[tuple[str, float]]: A list of tuples where each tuple contains
+                the indicator name as a string and its corresponding weight
+                as a float. Returns an empty list if `trace` is False.
+        """
         return self._formula.indicators_weights(trace=trace) if trace else []
 
     def evaluate(
@@ -1147,6 +1534,11 @@ class MultCorr(Formula):
 
 
 class AddCorr(Formula):
+    """Apply an additive correction to a formula.
+
+    Adds a named correction series to the evaluated series.
+    """
+
     def __init__(self, formula: Formula, correction_name: str) -> None:
         """Initialize an AddCorr object.
 
@@ -1171,6 +1563,11 @@ class AddCorr(Formula):
 
     @property
     def baseyear(self) -> int | None:
+        """Base year used for the additive correction formula.
+
+        Returns:
+            int | None: The base year if set, otherwise None.
+        """
         return self._baseyear
 
     @baseyear.setter
@@ -1183,9 +1580,28 @@ class AddCorr(Formula):
 
     @property
     def what(self) -> str:
+        """Textual representation of this additive correction formula.
+
+        Returns:
+            str: Expression showing the additive correction applied to the formula.
+        """
         return f"{self._correction_name}+({self._formula.what})-avg({self._correction_name}<date {self.baseyear})"
 
     def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
+        """Indicator-weight pairs for this indicator formula.
+
+        This method uses the `_formula.indicators_weights` to compute the indicator
+        weights when `trace` is set to `True`. If `trace` is `False`, it returns an
+        empty list.
+
+        Args:
+            trace: A flag to indicate whether to calculate the weights with or without tracing.
+
+        Returns:
+            list[tuple[str, float]]: A list of tuples where each tuple contains
+                the indicator name as a string and its corresponding weight
+                as a float. Returns an empty list if `trace` is False.
+        """
         return self._formula.indicators_weights(trace=trace) if trace else []
 
     def evaluate(
@@ -1245,6 +1661,11 @@ class AddCorr(Formula):
 
 
 class FJoin(Formula):
+    """Join two formulas at a given year.
+
+    Uses one formula up to (from_year - 1) and another from from_year onward.
+    """
+
     def __init__(
         self, name: str, formula1: Formula, formula0: Formula, from_year: int
     ) -> None:
@@ -1282,13 +1703,37 @@ class FJoin(Formula):
 
     @property
     def indicators(self) -> list[str]:
+        """All indicator names used by both joined formulas.
+
+        Returns:
+            list[str]: Unique indicator names from both formulas.
+        """
         return list(set(self._formula1.indicators).union(self._formula0.indicators))
 
     @property
     def what(self) -> str:
+        """Textual representation of this join formula.
+
+        Returns:
+            str: Expression showing which formula is used for each year.
+        """
         return f"{self._formula1.name} if year>={self._from_year} else {self._formula0.name}"
 
     def indicators_weights(self, trace: bool = True) -> list[tuple[str, float]]:
+        """Indicator-weight pairs for this indicator formula.
+
+        This method uses the `_formula.indicators_weights` to compute the indicator
+        weights when `trace` is set to `True`. If `trace` is `False`, it returns an
+        empty list.
+
+        Args:
+            trace: A flag to indicate whether to calculate the weights with or without tracing.
+
+        Returns:
+            list[tuple[str, float]]: A list of tuples where each tuple contains
+                the indicator name as a string and its corresponding weight
+                as a float. Returns an empty list if `trace` is False.
+        """
         indicators_weights = []
         if trace:
             for formula in [self._formula1, self._formula0]:
