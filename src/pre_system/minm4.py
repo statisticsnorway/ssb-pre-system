@@ -1,17 +1,3 @@
-# ---
-# jupyter:
-#   jupytext:
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#   kernelspec:
-#     display_name: Python3
-#     language: python
-#     name: python3
-# ---
-
-# Necessary packages.
 import warnings
 from typing import Literal
 

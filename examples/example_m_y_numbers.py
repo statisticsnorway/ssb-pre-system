@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 
-# +
 y_array = np.array(
     [
         [19532.67289666, 254412.97247388],
