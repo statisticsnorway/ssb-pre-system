@@ -1,6 +1,6 @@
 [project]
 name = "ssb-pre-system"
-version = "0.7"
+version = "0.7.0"
 description = "Pre-system for monthly and quarterly national accounts statistics."
 authors = [{ name = "Vemund Rundberget", email = "vemund.rundberget@ssb.no" }]
 maintainers = [{ name = "Statistics Norway, National accounts Department (210)" }]
