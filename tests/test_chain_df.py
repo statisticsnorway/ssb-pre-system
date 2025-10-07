@@ -1,11 +1,9 @@
-# +
 import pandas as pd
 import pytest
 
 from pre_system.chaining import chain_df
 
 
-# +
 def make_test_dfs() -> tuple[pd.DataFrame, pd.DataFrame]:
     idx: pd.PeriodIndex = pd.period_range("2015", "2019", freq="Y")
     val_df: pd.DataFrame = pd.DataFrame({"serie1": [1, 2, 3, 4, 5]}, index=idx)
