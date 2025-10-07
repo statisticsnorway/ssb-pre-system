@@ -1,25 +1,33 @@
-[tool.poetry]
+[project]
 name = "ssb-pre-system"
-version = "0.6.0"
-description = "Forsystem for månedlige og kvartalsevise NR-statistikker"
-authors = ["Benedikt Goodman <benedikt.goodman@ssb.no>"]
+version = "0.5.8"
+description = "Pre-system for monthly and quarterly national accounts statistics."
+authors = [{ name = "Vemund Rundberget", email = "vemund.rundberget@ssb.no" }]
+maintainers = [{ name = "Statistics Norway, National accounts Department (210)" }]
 license = "MIT"
 readme = "README.md"
+requires-python = ">=3.10,<4.0"
+dynamic = ["classifiers"]
+dependencies = [
+    "numpy>=1.26.4",
+    "pandas[performance]>=2.3.3",
+    "pyarrow>=21.0",
+    "pandas-stubs>=2.3.2.250926",
+]
+
+[project.urls]
 homepage = "https://github.com/statisticsnorway/ssb-pre-system"
 repository = "https://github.com/statisticsnorway/ssb-pre-system"
 documentation = "https://statisticsnorway.github.io/ssb-pre-system"
-packages = [{ include = "pre_system", from = "src" }]
-classifiers = ["Development Status :: 4 - Beta"]
-
-[tool.poetry.urls]
 Changelog = "https://github.com/statisticsnorway/ssb-pre-system/releases"
 
-[tool.poetry.dependencies]
-python = "^3.10"
-numpy = ">=1.26.4"
-pandas = {extras = ["performance"], version = ">=2.2.1"}
-pandas-stubs = ">=2.2.0.240218"
-pyarrow = ">=15.0.1"
+[project.scripts]
+ssb-pre-system = "pre_system.__main__:main"
+
+[tool.poetry]
+classifiers = ["Development Status :: 4 - Beta"]
+requires-poetry = ">=2.0"
+packages = [{ include = "pre_system", from = "src" }]
 
 [tool.poetry.group.dev.dependencies]
 pygments = ">=2.10.0"
@@ -35,11 +43,16 @@ pytest = ">=6.2.5"
 sphinx = ">=6.2.1"
 sphinx-autobuild = ">=2021.3.14"
 sphinx-autodoc-typehints = ">=1.24.0"
+sphinx-click = ">=3.0.2"
 typeguard = ">=2.13.3"
 xdoctest = { extras = ["colors"], version = ">=0.15.10" }
 myst-parser = { version = ">=0.16.1" }
 matplotlib = ">=3.8.3"
 jupyter = ">=1.0.0"
+deptry = ">=0.23.0"
+
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.9"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
@@ -57,6 +70,9 @@ relative_files = true
 [tool.coverage.report]
 show_missing = true
 fail_under = 50
+
+[tool.deptry.per_rule_ignores]
+DEP001 = ["nox", "nox_poetry"]  # packages available by default
 
 [tool.mypy]
 strict = true
@@ -76,7 +92,7 @@ ignore_missing_imports = true
 force-exclude = true  # Apply excludes to pre-commit
 show-fixes = true
 src = ["src", "tests"]
-target-version = "py310"  # Minimum Python version supported
+target-version = "py311"  # Minimum Python version supported
 include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
 extend-exclude = [
     "__pycache__",

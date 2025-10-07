@@ -19,7 +19,6 @@ Forsystem for månedlige og kvartalsvise NR-statistikker
 [pypi status]: https://pypi.org/project/ssb-pre-system/
 [documentation]: https://statisticsnorway.github.io/ssb-pre-system
 [tests]: https://github.com/statisticsnorway/ssb-pre-system/actions?workflow=Tests
-
 [sonarcov]: https://sonarcloud.io/summary/overall?id=statisticsnorway_ssb-pre-system
 [sonarquality]: https://sonarcloud.io/summary/overall?id=statisticsnorway_ssb-pre-system
 [pre-commit]: https://github.com/pre-commit/pre-commit
