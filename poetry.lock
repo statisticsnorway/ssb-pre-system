@@ -3263,7 +3263,7 @@ description = "Run a subprocess in a pseudo terminal"
 optional = false
 python-versions = "*"
 groups = ["dev"]
-markers = "sys_platform != \"win32\" and sys_platform != \"emscripten\" or os_name != \"nt\""
+markers = "os_name != \"nt\" or sys_platform != \"win32\" and sys_platform != \"emscripten\""
 files = [
     {file = "ptyprocess-0.7.0-py2.py3-none-any.whl", hash = "sha256:4b41f3967fce3af57cc7e94b888626c18bf37a083e3651ca8feeb66d492fef35"},
     {file = "ptyprocess-0.7.0.tar.gz", hash = "sha256:5c5d0a3b48ceee0b48485e0c26037c0acd7d29765ca3fbb5cb3831d347423220"},
@@ -4675,14 +4675,14 @@ typing_extensions = ">=4.14.0"
 
 [[package]]
 name = "types-python-dateutil"
-version = "2.9.0.20250822"
+version = "2.9.0.20251008"
 description = "Typing stubs for python-dateutil"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "types_python_dateutil-2.9.0.20250822-py3-none-any.whl", hash = "sha256:849d52b737e10a6dc6621d2bd7940ec7c65fcb69e6aa2882acf4e56b2b508ddc"},
-    {file = "types_python_dateutil-2.9.0.20250822.tar.gz", hash = "sha256:84c92c34bd8e68b117bff742bc00b692a1e8531262d4507b33afcc9f7716cd53"},
+    {file = "types_python_dateutil-2.9.0.20251008-py3-none-any.whl", hash = "sha256:b9a5232c8921cf7661b29c163ccc56055c418ab2c6eabe8f917cbcc73a4c4157"},
+    {file = "types_python_dateutil-2.9.0.20251008.tar.gz", hash = "sha256:c3826289c170c93ebd8360c3485311187df740166dbab9dd3b792e69f2bc1f9c"},
 ]
 
 [[package]]
